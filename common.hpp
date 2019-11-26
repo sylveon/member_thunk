@@ -7,9 +7,9 @@
 #define MEMBER_THUNK_ASSERT_ARCHITECTURE(expected) static_assert(member_thunk::architecture::expected == member_thunk::architecture::native, "Tried to create a thunk for a mismatching architecture")
 
 #ifdef __cpp_lib_concepts
-#define MEMBER_THUNK_REQUIRES(x) requires x
+#define MEMBER_THUNK_REQUIRES(requirement) requires requirement
 #else
-#define MEMBER_THUNK_REQUIRES(x)
+#define MEMBER_THUNK_REQUIRES(requirement)
 #endif
 
 namespace member_thunk

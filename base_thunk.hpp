@@ -19,15 +19,19 @@ namespace member_thunk
 				thunk_heap.reset(HeapCreate(HEAP_CREATE_ENABLE_EXECUTE, 0, 0));
 				if (!thunk_heap)
 				{
-					throw std::bad_alloc();
+					throw_last_error("HeapCreate failed");
 				}
 			}
 
 			return thunk_heap.get();
 		}
 
+		[[noreturn]] static void throw_last_error(const char* message)
+		{
+			throw std::system_error({ static_cast<int>(GetLastError()), std::system_category() }, message);
+		}
 
-		// Disable copy and move for all implementers
+		// Disable copy and move for all implementation
 		base_thunk(const base_thunk&) = delete;
 		base_thunk& operator=(const base_thunk&) = delete;
 
@@ -38,10 +42,7 @@ namespace member_thunk
 		{
 			if (!FlushInstructionCache(GetCurrentProcess(), ptr, size))
 			{
-				throw std::system_error(
-					{ static_cast<int>(GetLastError()), std::system_category() },
-					"FlushInstructionCache failed"
-				);
+				throw_last_error("FlushInstructionCache failed");
 			}
 		}
 
@@ -55,14 +56,19 @@ namespace member_thunk
 			}
 			else
 			{
-				throw std::bad_alloc();
-
+				throw_last_error("HeapAlloc failed");
 			}
 		}
 
-		void operator delete(void* ptr, std::size_t size)
+		void operator delete(void* ptr, std::size_t size) noexcept(false)
 		{
-			HeapFree(init_heap(), 0, ptr);
+			if (ptr)
+			{
+				if (!HeapFree(init_heap(), 0, ptr))
+				{
+					throw_last_error("HeapFree failed");
+				}
+			}
 		}
 	};
 }

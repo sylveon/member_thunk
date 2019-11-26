@@ -12,25 +12,25 @@ namespace member_thunk
 	// mov rcx, {this}
 	// mov rax, {function}
 	// rex_jmp rax
-	template<typename T>
-		MEMBER_THUNK_REQUIRES(is_function_pointer_with_pointer_sized_first_arg_v<T>)
+	template<typename Func>
+		MEMBER_THUNK_REQUIRES(is_function_pointer_with_pointer_sized_first_arg_v<Func>)
 	class x64_thunk final : public base_thunk
 	{
 		std::uint8_t mov_rcx[2];
 		void* that;
 		std::uint8_t mov_rax[2];
 		void* function;
-		std::uint8_t rex_jmp[3];
+		std::uint8_t rex_jmp_rax[3];
 
 	public:
-		template<typename U, typename V>
-			MEMBER_THUNK_REQUIRES((is_class_member_function_pointer_with_same_args_except_first_v<T, U, V>))
-		x64_thunk(U* pThis, V pFunc) :
+		template<typename Class, typename MemberFunc>
+			MEMBER_THUNK_REQUIRES((is_class_member_function_pointer_with_same_args_except_first_v<Func, Class, MemberFunc>))
+		x64_thunk(Class* pThis, MemberFunc pFunc) :
 			mov_rcx { 0x48, 0xB9 },
 			that(pThis),
 			mov_rax { 0x48, 0xB8 },
 			function(reinterpret_cast<void*&>(pFunc)),
-			rex_jmp { 0x48, 0xFF, 0xE0 }
+			rex_jmp_rax { 0x48, 0xFF, 0xE0 }
 		{
 			MEMBER_THUNK_ASSERT_SIZE(x64_thunk, 23);
 			MEMBER_THUNK_ASSERT_ARCHITECTURE(x64);
@@ -38,9 +38,9 @@ namespace member_thunk
 			flush(this, sizeof(*this));
 		}
 
-		T get_thunked_function() const
+		Func get_thunked_function() const
 		{
-			return reinterpret_cast<T>(this);
+			return reinterpret_cast<Func>(this);
 		}
 	};
 
