@@ -40,7 +40,7 @@ namespace member_thunk
 			{
 				throw std::system_error(
 					{ static_cast<int>(GetLastError()), std::system_category() },
-					"FlushInstructionCache failed."
+					"FlushInstructionCache failed"
 				);
 			}
 		}

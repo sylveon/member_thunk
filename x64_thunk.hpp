@@ -33,6 +33,7 @@ namespace member_thunk
 			rex_jmp { 0x48, 0xFF, 0xE0 }
 		{
 			MEMBER_THUNK_ASSERT_SIZE(x64_thunk, 23);
+			MEMBER_THUNK_ASSERT_ARCHITECTURE(x64);
 
 			flush(this, sizeof(*this));
 		}
