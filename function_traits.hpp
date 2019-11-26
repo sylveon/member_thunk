@@ -23,15 +23,18 @@ namespace member_thunk
 	MEMBER_THUNK_GENERATE_MEMBER_SPECIALIZATION(convention, ); \
 	MEMBER_THUNK_GENERATE_MEMBER_SPECIALIZATION(convention, const);
 
-#if defined(_M_AMD64) || defined(_M_ARM) || defined(_M_ARM64)
 	// Specifying any calling convention on a function pointer in non-x86 will
 	// explicitely specify the regular calling convention for that platform.
 	// /Gv would make __vectorcall implicit on regular pointers in x64.
 	MEMBER_THUNK_GENERATE_CALLING_CONVENTION_SPECIALIZATION(__stdcall)
-
-#if defined(_M_AMD64)
+#if defined(_M_AMD64) || defined(_M_IX86)
+	// Same than normal x64 calling convention/x86 __fastcall but with vector
+	// registers used to pass vector parameters.
 	MEMBER_THUNK_GENERATE_CALLING_CONVENTION_SPECIALIZATION(__vectorcall)
 #endif
+#if defined(_M_IX86)
+	MEMBER_THUNK_GENERATE_CALLING_CONVENTION_SPECIALIZATION(__cdecl)
+	MEMBER_THUNK_GENERATE_CALLING_CONVENTION_SPECIALIZATION(__fastcall)
 #endif
 
 #undef MEMBER_THUNK_GENERATE_CALLING_CONVENTION_SPECIALIZATION
