@@ -23,4 +23,7 @@ namespace member_thunk
 		native = arm64
 #endif
 	};
+
+	template<typename Func, architecture Arch = architecture::native>
+	class thunk;
 }
