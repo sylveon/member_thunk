@@ -31,7 +31,7 @@ namespace member_thunk
 			throw std::system_error({ static_cast<int>(GetLastError()), std::system_category() }, message);
 		}
 
-		// Disable copy and move for all implementation
+		// Disable copy and move for all implementations
 		base_thunk(const base_thunk&) = delete;
 		base_thunk& operator=(const base_thunk&) = delete;
 
@@ -69,6 +69,22 @@ namespace member_thunk
 					throw_last_error("HeapFree failed");
 				}
 			}
+		}
+	};
+
+	template<typename Derived, typename Func>
+	class crtp_base_thunk : public base_thunk
+	{
+	protected:
+		void flush()
+		{
+			base_thunk::flush(static_cast<Derived*>(this), sizeof(Derived));
+		}
+
+	public:
+		Func get_thunked_function() const
+		{
+			return reinterpret_cast<Func>(static_cast<const Derived*>(this));
 		}
 	};
 }

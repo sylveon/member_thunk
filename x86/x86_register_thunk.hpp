@@ -1,6 +1,5 @@
 #pragma once
 #include "../base_thunk.hpp"
-#include "x86_thunk.hpp"
 #include <cstdint>
 
 #include "calling_convention_traits.hpp"
@@ -14,7 +13,8 @@ namespace member_thunk
 	// mov ecx, {this}
 	// jmp eax
 	template<typename Func>
-	class x86_thunk<Func, std::enable_if_t<is_this_on_register_v<Func>>> final : public base_thunk
+		requires is_this_on_register_v<Func>
+	class thunk<Func, architecture::x86> final : public crtp_base_thunk<thunk<Func, architecture::x86>, Func>
 	{
 		std::uint8_t mov_eax;
 		void* function;
@@ -24,22 +24,16 @@ namespace member_thunk
 
 	public:
 		template<typename Class, typename MemberFunc>
-		x86_thunk(Class* pThis, MemberFunc pFunc) :
+		thunk(Class* pThis, MemberFunc pFunc) :
 			mov_eax(0xB8),
 			function(reinterpret_cast<void*&>(pFunc)),
 			mov_ecx(0xB9),
 			that(pThis),
 			jmp_eax { 0xFF, 0xE0 }
 		{
-			MEMBER_THUNK_ASSERT_SIZE(x86_thunk, 12);
-			MEMBER_THUNK_ASSERT_ARCHITECTURE(x86);
+			MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(12);
 
-			flush(this, sizeof(*this));
-		}
-
-		Func get_thunked_function() const
-		{
-			return reinterpret_cast<Func>(this);
+			this->flush();
 		}
 	};
 

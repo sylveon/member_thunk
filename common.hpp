@@ -3,8 +3,7 @@
 #define MEMBER_THUNK_PACK __pragma(pack(push, 1))
 #define MEMBER_THUNK_UNPACK __pragma(pack(pop))
 
-#define MEMBER_THUNK_ASSERT_SIZE(T, s) static_assert(sizeof(T) == s, "Thunk class is bigger than assembly")
-#define MEMBER_THUNK_ASSERT_ARCHITECTURE(expected) static_assert(member_thunk::architecture::expected == member_thunk::architecture::native, "Tried to create a thunk for a mismatching architecture")
+#define MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(s) static_assert(sizeof(*this) == s, "Thunk class is bigger than assembly")
 
 namespace member_thunk
 {

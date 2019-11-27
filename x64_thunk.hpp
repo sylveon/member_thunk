@@ -12,7 +12,7 @@ namespace member_thunk
 	// mov rax, {function}
 	// rex_jmp rax
 	template<typename Func>
-	class x64_thunk final : public base_thunk
+	class thunk<Func, architecture::x64> final : public crtp_base_thunk<thunk<Func, architecture::x64>, Func>
 	{
 		std::uint8_t mov_rcx[2];
 		void* that;
@@ -22,22 +22,16 @@ namespace member_thunk
 
 	public:
 		template<typename Class, typename MemberFunc>
-		x64_thunk(Class* pThis, MemberFunc pFunc) :
+		thunk(Class* pThis, MemberFunc pFunc) :
 			mov_rcx { 0x48, 0xB9 },
 			that(pThis),
 			mov_rax { 0x48, 0xB8 },
 			function(reinterpret_cast<void*&>(pFunc)),
 			rex_jmp_rax { 0x48, 0xFF, 0xE0 }
 		{
-			MEMBER_THUNK_ASSERT_SIZE(x64_thunk, 23);
-			MEMBER_THUNK_ASSERT_ARCHITECTURE(x64);
+			MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(23);
 
-			flush(this, sizeof(*this));
-		}
-
-		Func get_thunked_function() const
-		{
-			return reinterpret_cast<Func>(this);
+			this->flush();
 		}
 	};
 
