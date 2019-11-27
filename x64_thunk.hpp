@@ -3,7 +3,6 @@
 #include <cstdint>
 
 #include "common.hpp"
-#include "function_traits.hpp"
 
 namespace member_thunk
 {
@@ -13,7 +12,6 @@ namespace member_thunk
 	// mov rax, {function}
 	// rex_jmp rax
 	template<typename Func>
-		MEMBER_THUNK_REQUIRES(is_function_pointer_with_pointer_sized_first_arg_v<Func>)
 	class x64_thunk final : public base_thunk
 	{
 		std::uint8_t mov_rcx[2];
@@ -24,7 +22,6 @@ namespace member_thunk
 
 	public:
 		template<typename Class, typename MemberFunc>
-			MEMBER_THUNK_REQUIRES((is_class_member_function_pointer_with_same_args_except_first_v<Func, Class, MemberFunc>))
 		x64_thunk(Class* pThis, MemberFunc pFunc) :
 			mov_rcx { 0x48, 0xB9 },
 			that(pThis),
