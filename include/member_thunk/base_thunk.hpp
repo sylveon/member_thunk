@@ -6,6 +6,11 @@
 #include <system_error>
 #include <wil/resource.h>
 
+#define MEMBER_THUNK_PACK __pragma(pack(push, 1))
+#define MEMBER_THUNK_UNPACK __pragma(pack(pop))
+
+#define MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(s) static_assert(sizeof(*this) == s, "Thunk class is bigger than assembly")
+
 namespace member_thunk
 {
 	class base_thunk
@@ -73,7 +78,7 @@ namespace member_thunk
 	};
 
 	template<typename Derived, typename Func>
-	class crtp_base_thunk : public base_thunk
+	class crtp_thunk : public base_thunk
 	{
 	protected:
 		void flush()

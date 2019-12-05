@@ -1,10 +1,5 @@
 #pragma once
 
-#define MEMBER_THUNK_PACK __pragma(pack(push, 1))
-#define MEMBER_THUNK_UNPACK __pragma(pack(pop))
-
-#define MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(s) static_assert(sizeof(*this) == s, "Thunk class is bigger than assembly")
-
 namespace member_thunk
 {
 	enum class architecture

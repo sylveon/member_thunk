@@ -12,7 +12,7 @@ namespace member_thunk
 	// mov rax, {function}
 	// rex_jmp rax
 	template<typename Func>
-	class thunk<Func, architecture::x64> final : public crtp_base_thunk<thunk<Func, architecture::x64>, Func>
+	class thunk<Func, architecture::x64> final : public crtp_thunk<thunk<Func, architecture::x64>, Func>
 	{
 		std::uint8_t mov_rcx[2];
 		void* that;

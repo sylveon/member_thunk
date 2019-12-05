@@ -17,7 +17,7 @@ namespace member_thunk
 	// jmp eax
 	template<typename Func>
 		requires is_this_on_stack_v<Func>
-	class thunk<Func, architecture::x86> final : public crtp_base_thunk<thunk<Func, architecture::x86>, Func>
+	class thunk<Func, architecture::x86> final : public crtp_thunk<thunk<Func, architecture::x86>, Func>
 	{
 		std::uint8_t push_ebp;
 		std::uint8_t mov_ebp_esp[2];
