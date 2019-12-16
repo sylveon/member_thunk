@@ -1,6 +1,10 @@
 root = true
 
-[*.hpp]
+[*]
+charset = utf-8
 insert_final_newline = false
+trim_trailing_whitespace = true
+
+[*.hpp]
 indent_style = tab
 indent_size = 4
