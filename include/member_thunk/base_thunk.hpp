@@ -54,7 +54,7 @@ namespace member_thunk
 	protected:
 		base_thunk() = default;
 
-		void flush(void* ptr, std::size_t size)
+		void flush(const void* ptr, std::size_t size)
 		{
 			if (!FlushInstructionCache(GetCurrentProcess(), ptr, size))
 			{
