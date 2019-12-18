@@ -2,6 +2,7 @@
 #include "base_thunk.hpp"
 #include <cstdint>
 
+#include "architecture_traits.hpp"
 #include "common.hpp"
 
 namespace member_thunk

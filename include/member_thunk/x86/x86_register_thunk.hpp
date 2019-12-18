@@ -2,6 +2,7 @@
 #include "../base_thunk.hpp"
 #include <cstdint>
 
+#include "../architecture_traits.hpp"
 #include "calling_convention_traits.hpp"
 #include "../common.hpp"
 
