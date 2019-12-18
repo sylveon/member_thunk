@@ -19,6 +19,9 @@ namespace member_thunk
 #endif
 	};
 
-	template<typename Func, architecture Arch = architecture::native>
+	template<architecture arch>
+	inline constexpr bool is_architecture_v = architecture::native == arch;
+
+	template<typename Func>
 	class thunk;
 }

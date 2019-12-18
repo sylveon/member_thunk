@@ -12,13 +12,15 @@ namespace member_thunk
 	// mov rax, {function}
 	// rex_jmp rax
 	template<typename Func>
-	class thunk<Func, architecture::x64> final : public crtp_thunk<thunk<Func, architecture::x64>, Func>
+		requires is_architecture_v<architecture::x64>
+	class thunk<Func> final : public crtp_thunk<thunk<Func>, Func>
 	{
 		std::uint8_t mov_rcx[2];
 		void* that;
 		std::uint8_t mov_rax[2];
 		void* function;
 		std::uint8_t rex_jmp_rax[3];
+		std::uint8_t int3[9];
 
 	public:
 		template<typename Class, typename MemberFunc>
@@ -27,9 +29,11 @@ namespace member_thunk
 			that(pThis),
 			mov_rax { 0x48, 0xB8 },
 			function(reinterpret_cast<void*&>(pFunc)),
-			rex_jmp_rax { 0x48, 0xFF, 0xE0 }
+			rex_jmp_rax { 0x48, 0xFF, 0xE0 },
+			int3 { 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC }
 		{
-			MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(23);
+			MEMBER_THUNK_STATIC_ASSERT_ALIGNOF_THIS(16);
+			MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(32);
 
 			this->flush();
 		}
