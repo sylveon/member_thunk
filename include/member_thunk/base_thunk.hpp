@@ -12,13 +12,29 @@
 #define MEMBER_THUNK_PACK __pragma(pack(push, 1))
 #define MEMBER_THUNK_UNPACK __pragma(pack(pop))
 
-#define MEMBER_THUNK_STATIC_ASSERT_ALIGNOF_THIS(a) static_assert(alignof(decltype(*this)) >= a, "Thunk class is not at least 16-bytes aligned")
-#define MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(s) static_assert(sizeof(*this) == s, "Thunk class is bigger than assembly")
+#define MEMBER_THUNK_STRINGIFY_INNER(s) #s
+#define MEMBER_THUNK_STRINGIFY(s) MEMBER_THUNK_STRINGIFY_INNER(s)
+
+#define MEMBER_THUNK_BASE_THUNK_ALIGNMENT 16
+
+#define MEMBER_THUNK_STATIC_ASSERT_ALIGNOF_THIS() \
+	static_assert( \
+		alignof(decltype(*this)) == alignof(base_thunk), \
+		"Thunk class should be aligned on a " \
+			MEMBER_THUNK_STRINGIFY(MEMBER_THUNK_BASE_THUNK_ALIGNMENT) " bytes boundary" \
+	)
+#define MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(s) \
+	static_assert(sizeof(*this) == s, "Thunk class should be have a size of " #s " bytes")
 
 namespace member_thunk
 {
-	class alignas(16) base_thunk
+	class alignas(MEMBER_THUNK_BASE_THUNK_ALIGNMENT) base_thunk
 	{
+		using offset_t = unsigned char;
+
+		static constexpr bool is_aligned_heapalloc = MEMORY_ALLOCATION_ALIGNMENT >= MEMBER_THUNK_BASE_THUNK_ALIGNMENT;
+		inline static wil::unique_hheap thunk_heap;
+
 		[[noreturn]] static void throw_win32_error(DWORD error, const char* message)
 		{
 			throw std::system_error(static_cast<int>(error), std::system_category(), message);
@@ -28,8 +44,6 @@ namespace member_thunk
 		{
 			throw_win32_error(GetLastError(), message);
 		}
-
-		inline static wil::unique_hheap thunk_heap;
 
 		static HANDLE init_heap()
 		{
@@ -45,8 +59,6 @@ namespace member_thunk
 			return thunk_heap.get();
 		}
 
-		static constexpr bool is_aligned_heapalloc = MEMORY_ALLOCATION_ALIGNMENT >= 16;
-
 		// Disable copy and move for all implementations
 		base_thunk(const base_thunk&) = delete;
 		base_thunk& operator=(const base_thunk&) = delete;
@@ -54,7 +66,7 @@ namespace member_thunk
 	protected:
 		base_thunk() = default;
 
-		void flush(const void* ptr, std::size_t size)
+		static void flush(const void* ptr, std::size_t size)
 		{
 			if (!FlushInstructionCache(GetCurrentProcess(), ptr, size))
 			{
@@ -68,23 +80,23 @@ namespace member_thunk
 			std::size_t allocated_size = size;
 			if constexpr (!is_aligned_heapalloc)
 			{
-				allocated_size += 16;
+				allocated_size += alignof(base_thunk);
 			}
 
 			if (void* ptr = HeapAlloc(init_heap(), 0, allocated_size))
 			{
 				if constexpr (!is_aligned_heapalloc)
 				{
-					const auto byte_ptr = reinterpret_cast<unsigned char*>(ptr);
+					const auto byte_ptr = reinterpret_cast<offset_t*>(ptr);
 
 					// Reserve some space to store the offset.
-					std::size_t usable_space = allocated_size - 1;
-					ptr = byte_ptr + 1;
+					std::size_t usable_space = allocated_size - sizeof(offset_t);
+					ptr = byte_ptr + sizeof(offset_t);
 
-					if (std::align(16, size, ptr, usable_space))
+					if (std::align(alignof(base_thunk), size, ptr, usable_space))
 					{
-						const auto aligned_byte_ptr = reinterpret_cast<unsigned char*>(ptr);
-						aligned_byte_ptr[-1] = static_cast<unsigned char>(aligned_byte_ptr - byte_ptr);
+						const auto aligned_byte_ptr = reinterpret_cast<offset_t*>(ptr);
+						aligned_byte_ptr[-1] = static_cast<offset_t>(aligned_byte_ptr - byte_ptr);
 					}
 					else
 					{
@@ -106,9 +118,9 @@ namespace member_thunk
 		{
 			if (ptr)
 			{
-				const auto byte_ptr = reinterpret_cast<unsigned char*>(ptr);
+				const auto byte_ptr = reinterpret_cast<offset_t*>(ptr);
 
-				unsigned char offset = 0;
+				offset_t offset = 0;
 				if constexpr (!is_aligned_heapalloc)
 				{
 					offset = byte_ptr[-1];

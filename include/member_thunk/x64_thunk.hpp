@@ -33,7 +33,7 @@ namespace member_thunk
 			rex_jmp_rax { 0x48, 0xFF, 0xE0 },
 			int3 { 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC }
 		{
-			MEMBER_THUNK_STATIC_ASSERT_ALIGNOF_THIS(16);
+			MEMBER_THUNK_STATIC_ASSERT_ALIGNOF_THIS();
 			MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(32);
 
 			this->flush();
