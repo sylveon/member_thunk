@@ -7,7 +7,9 @@
 namespace member_thunk
 {
 	template<typename Func, typename Class, typename MemberFunc>
+#ifdef __cpp_lib_concepts // MIGRATION: IDE concept support
 		requires is_compatible_function_types_v<Func, Class, MemberFunc>
+#endif
 	std::unique_ptr<thunk<Func>> make(Class* pThis, MemberFunc pFunc)
 	{
 		return std::make_unique<thunk<Func>>(pThis, pFunc);
@@ -20,7 +22,9 @@ namespace member_thunk
 		MemberFunc pFunc;
 
 		template<typename Func>
+#ifdef __cpp_lib_concepts // MIGRATION: IDE concept support
 			requires is_compatible_function_types_v<Func, Class, MemberFunc>
+#endif
 		operator std::unique_ptr<thunk<Func>>()
 		{
 			return make<Func>(pThis, pFunc);

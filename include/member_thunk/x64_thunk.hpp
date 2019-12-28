@@ -12,9 +12,14 @@ namespace member_thunk
 	// mov rcx, {this}
 	// mov rax, {function}
 	// rex_jmp rax
+#ifdef __cpp_lib_concepts // MIGRATION: IDE concept support
 	template<typename Func>
 		requires is_architecture_v<architecture::x64>
 	class thunk<Func> final : public crtp_thunk<thunk<Func>, Func>
+#else
+	template<typename Func>
+	class thunk<Func, std::enable_if_t<is_architecture_v<architecture::x64>>> final : public crtp_thunk<thunk<Func>, Func>
+#endif
 	{
 		std::uint8_t mov_rcx[2];
 		void* that;

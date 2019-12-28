@@ -13,9 +13,14 @@ namespace member_thunk
 	// mov eax, {function}
 	// mov dword ptr [esp+4], {this}
 	// jmp eax
+#ifdef __cpp_lib_concepts // MIGRATION: IDE concept support
 	template<typename Func>
 		requires is_architecture_v<architecture::x86> && is_this_on_stack_v<Func>
 	class thunk<Func> final : public crtp_thunk<thunk<Func>, Func>
+#else
+	template<typename Func>
+	class thunk<Func, std::enable_if_t<is_architecture_v<architecture::x86> && is_this_on_stack_v<Func>>> final : public crtp_thunk<thunk<Func>, Func>
+#endif
 	{
 		std::uint8_t mov_eax;
 		void* function;
