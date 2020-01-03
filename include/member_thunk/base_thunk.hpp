@@ -91,7 +91,7 @@ namespace member_thunk
 
 					// Reserve some space to store the offset.
 					std::size_t usable_space = allocated_size - sizeof(offset_t);
-					ptr = byte_ptr + sizeof(offset_t);
+					ptr = byte_ptr + 1;
 
 					if (std::align(alignof(base_thunk), size, ptr, usable_space))
 					{
@@ -114,7 +114,7 @@ namespace member_thunk
 			}
 		}
 
-		void operator delete(void* ptr, std::size_t size) noexcept(false)
+		void operator delete(void* ptr, std::size_t) noexcept(false)
 		{
 			if (ptr)
 			{
