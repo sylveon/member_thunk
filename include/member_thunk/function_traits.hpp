@@ -4,6 +4,12 @@
 
 namespace member_thunk
 {
+	template<typename T>
+	inline constexpr bool is_pointer_like_v = std::is_pointer_v<T> || (std::is_integral_v<T> && sizeof(T) == sizeof(void*));
+
+	template<typename T>
+	inline constexpr bool is_scalar_or_void_v = std::is_void_v<Ret> || std::is_scalar_v<Ret>;
+
 	template<typename Func, typename Class, typename MemberFunc>
 	inline constexpr bool is_compatible_function_types_v = false;
 
@@ -12,8 +18,7 @@ namespace member_thunk
 	inline constexpr bool is_compatible_function_types_v< \
 		Ret(convention*)(FirstArg, Args...), \
 		Class, Ret(convention Class::*)(Args...) specifiers \
-	> = sizeof(FirstArg) == sizeof(void*) && std::is_trivial_v<FirstArg> && \
-		(std::is_void_v<Ret> || std::is_scalar_v<Ret>);
+	> = is_pointer_like_v<FirstArg> && is_scalar_or_void_v<Ret>;
 
 #define MEMBER_THUNK_GENERATE_NOEXCEPT_SPECIALIZATION(convention, specifiers) \
 	MEMBER_THUNK_GENERATE_MEMBER_SPECIALIZATION(convention, specifiers) \
