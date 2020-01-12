@@ -14,8 +14,12 @@ namespace member_thunk
 	// brk #0xF000
 	// {this}
 	// {function}
+#ifdef __cpp_concepts  // MIGRATION: IDE concept support
 	template<typename Func>
-	class thunk<Func> final : public crtp_thunk<thunk<Func>, Func>
+#else
+	template<typename Func, typename>
+#endif
+	class thunk final : public crtp_thunk<thunk<Func>, Func>
 	{
 		std::uint8_t ldr_x0_16[4];
 		std::uint8_t ldr_x8_20[4];

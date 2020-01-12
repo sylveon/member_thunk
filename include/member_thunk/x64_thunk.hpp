@@ -20,8 +20,12 @@ namespace member_thunk
 	// int 3
 	// int 3
 	// int 3
+#ifdef __cpp_concepts  // MIGRATION: IDE concept support
 	template<typename Func>
-	class thunk<Func> final : public crtp_thunk<thunk<Func>, Func>
+#else
+	template<typename Func, typename>
+#endif
+	class thunk final : public crtp_thunk<thunk<Func>, Func>
 	{
 		std::uint8_t mov_rcx[2];
 		void* that;
