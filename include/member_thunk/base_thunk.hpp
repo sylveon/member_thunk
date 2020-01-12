@@ -34,7 +34,6 @@ namespace member_thunk
 		using offset_t = unsigned char;
 
 		static constexpr bool is_aligned_heapalloc = MEMORY_ALLOCATION_ALIGNMENT >= MEMBER_THUNK_BASE_THUNK_ALIGNMENT;
-		inline static wil::unique_hheap thunk_heap;
 
 		[[noreturn]] static void throw_win32_error(DWORD error, const char* message)
 		{
@@ -46,18 +45,21 @@ namespace member_thunk
 			throw_win32_error(GetLastError(), message);
 		}
 
-		static HANDLE init_heap()
+		static HANDLE get_executable_heap()
 		{
-			if (!thunk_heap)
+			static wil::unique_hheap executable_heap([]
 			{
-				thunk_heap.reset(HeapCreate(HEAP_CREATE_ENABLE_EXECUTE, 0, 0));
-				if (!thunk_heap)
+				if (wil::unique_hheap heap { HeapCreate(HEAP_CREATE_ENABLE_EXECUTE, 0, 0) })
+				{
+					return heap;
+				}
+				else
 				{
 					throw_last_error("HeapCreate failed");
 				}
-			}
+			}());
 
-			return thunk_heap.get();
+			return executable_heap.get();
 		}
 
 		// Disable copy and move for all implementations
@@ -98,7 +100,7 @@ namespace member_thunk
 				allocated_size += alignof(base_thunk);
 			}
 
-			if (void* ptr = HeapAlloc(init_heap(), 0, allocated_size))
+			if (void* ptr = HeapAlloc(get_executable_heap(), 0, allocated_size))
 			{
 				if constexpr (!is_aligned_heapalloc)
 				{
@@ -141,7 +143,7 @@ namespace member_thunk
 					offset = byte_ptr[-1];
 				}
 
-				if (!HeapFree(init_heap(), 0, byte_ptr - offset))
+				if (!HeapFree(get_executable_heap(), 0, byte_ptr - offset))
 				{
 					throw_last_error("HeapFree failed");
 				}
