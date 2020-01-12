@@ -2,6 +2,7 @@
 #include <errhandlingapi.h>
 #include <heapapi.h>
 #include <memory>
+#include <memoryapi.h>
 #include <new>
 #include <processthreadsapi.h>
 #include <stdexcept>
@@ -71,6 +72,20 @@ namespace member_thunk
 			if (!FlushInstructionCache(GetCurrentProcess(), ptr, size))
 			{
 				throw_last_error("FlushInstructionCache failed");
+			}
+		}
+
+		static void set_call_target(void* ptr, std::size_t size, bool valid)
+		{
+			auto info = CFG_CALL_TARGET_INFO
+			{
+				.Offset = 0,
+				.Flags = static_cast<ULONG_PTR>(valid ? CFG_CALL_TARGET_VALID : 0)
+			};
+
+			if (!SetProcessValidCallTargets(GetCurrentProcess(), ptr, size, 1, &info))
+			{
+				throw_last_error("SetProcessValidCallTargets failed");
 			}
 		}
 

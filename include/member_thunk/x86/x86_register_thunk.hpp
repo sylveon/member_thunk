@@ -2,7 +2,6 @@
 #include "../crtp_thunk.hpp"
 #include <cstdint>
 
-#include "../architecture_traits.hpp"
 #include "calling_convention_traits.hpp"
 #include "../common.hpp"
 
@@ -19,11 +18,11 @@ namespace member_thunk
 	// int 3
 #ifdef __cpp_concepts // MIGRATION: IDE concept support
 	template<typename Func>
-		requires is_architecture_v<architecture::x86> && is_this_on_register_v<Func>
+		requires is_this_on_register_v<Func>
 	class thunk<Func> final : public crtp_thunk<thunk<Func>, Func>
 #else
 	template<typename Func>
-	class thunk<Func, std::enable_if_t<is_architecture_v<architecture::x86> && is_this_on_register_v<Func>>> final : public crtp_thunk<thunk<Func>, Func>
+	class thunk<Func, std::enable_if_t<is_this_on_register_v<Func>>> final : public crtp_thunk<thunk<Func>, Func>
 #endif
 	{
 		std::uint8_t mov_eax;
@@ -34,10 +33,9 @@ namespace member_thunk
 		std::uint8_t int_3[4];
 
 	public:
-		template<typename Class, typename MemberFunc>
-		thunk(Class* pThis, MemberFunc pFunc) :
+		thunk(void* pThis, void* pFunc) :
 			mov_eax(0xB8),
-			function(reinterpret_cast<void*&>(pFunc)),
+			function(pFunc),
 			mov_ecx(0xB9),
 			that(pThis),
 			jmp_eax { 0xFF, 0xE0 },
@@ -46,7 +44,7 @@ namespace member_thunk
 			MEMBER_THUNK_STATIC_ASSERT_ALIGNOF_THIS();
 			MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(16);
 
-			this->flush();
+			this->init_thunk();
 		}
 	};
 

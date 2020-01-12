@@ -6,33 +6,33 @@
 
 namespace member_thunk
 {
-	template<typename Func, typename Class, typename MemberFunc>
+	template<typename Func, typename MemberFunc>
 #ifdef __cpp_concepts // MIGRATION: IDE concept support
-		requires is_compatible_function_types_v<Func, Class, MemberFunc>
+		requires is_compatible_function_types_v<Func, MemberFunc>
 #endif
-	std::unique_ptr<thunk<Func>> make(Class* pThis, MemberFunc pFunc)
+	std::unique_ptr<thunk<Func>> make(get_this_ptr_t<MemberFunc> pThis, MemberFunc pFunc)
 	{
-		return std::make_unique<thunk<Func>>(pThis, pFunc);
+		return std::make_unique<thunk<Func>>(const_cast<void*>(static_cast<const void*>(pThis)), reinterpret_cast<void*&>(pFunc));
 	}
 
-	template<typename Class, typename MemberFunc>
+	template<typename MemberFunc>
 	struct factory
 	{
-		Class* pThis;
-		MemberFunc pFunc;
+		get_this_ptr_t<MemberFunc> that;
+		MemberFunc function;
 
 		template<typename Func>
 #ifdef __cpp_concepts // MIGRATION: IDE concept support
-			requires is_compatible_function_types_v<Func, Class, MemberFunc>
+			requires is_compatible_function_types_v<Func, MemberFunc>
 #endif
 		operator std::unique_ptr<thunk<Func>>()
 		{
-			return make<Func>(pThis, pFunc);
+			return make<Func>(that, function);
 		}
 	};
 
-	template<typename Class, typename MemberFunc>
-	factory<Class, MemberFunc> make(Class* pThis, MemberFunc pFunc)
+	template<typename MemberFunc>
+	factory<MemberFunc> make(get_this_ptr_t<MemberFunc> pThis, MemberFunc pFunc)
 	{
 		return { pThis, pFunc };
 	}

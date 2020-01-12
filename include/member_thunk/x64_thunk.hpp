@@ -2,7 +2,6 @@
 #include "crtp_thunk.hpp"
 #include <cstdint>
 
-#include "architecture_traits.hpp"
 #include "common.hpp"
 
 namespace member_thunk
@@ -21,14 +20,8 @@ namespace member_thunk
 	// int 3
 	// int 3
 	// int 3
-#ifdef __cpp_concepts // MIGRATION: IDE concept support
 	template<typename Func>
-		requires is_architecture_v<architecture::x64>
 	class thunk<Func> final : public crtp_thunk<thunk<Func>, Func>
-#else
-	template<typename Func>
-	class thunk<Func, std::enable_if_t<is_architecture_v<architecture::x64>>> final : public crtp_thunk<thunk<Func>, Func>
-#endif
 	{
 		std::uint8_t mov_rcx[2];
 		void* that;
@@ -38,19 +31,18 @@ namespace member_thunk
 		std::uint8_t int_3[9];
 
 	public:
-		template<typename Class, typename MemberFunc>
-		thunk(Class* pThis, MemberFunc pFunc) :
+		thunk(void* pThis, void* pFunc) :
 			mov_rcx { 0x48, 0xB9 },
 			that(pThis),
 			mov_rax { 0x48, 0xB8 },
-			function(reinterpret_cast<void*&>(pFunc)),
+			function(pFunc),
 			rex_jmp_rax { 0x48, 0xFF, 0xE0 },
 			int_3 { 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC }
 		{
 			MEMBER_THUNK_STATIC_ASSERT_ALIGNOF_THIS();
 			MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(32);
 
-			this->flush();
+			this->init_thunk();
 		}
 	};
 
