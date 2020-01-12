@@ -2,8 +2,6 @@
 #include "crtp_thunk.hpp"
 #include <cstdint>
 
-#include "common.hpp"
-
 namespace member_thunk
 {
 	MEMBER_THUNK_PACK
