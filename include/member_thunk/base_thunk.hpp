@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <errhandlingapi.h>
 #include <heapapi.h>
 #include <memory>
@@ -8,6 +9,8 @@
 #include <stdexcept>
 #include <system_error>
 #include <wil/resource.h>
+#include <minwindef.h>
+#include <winerror.h>
 #include <winnt.h>
 
 #define MEMBER_THUNK_PACK __pragma(pack(push, 1))
