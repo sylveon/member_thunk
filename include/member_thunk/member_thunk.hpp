@@ -7,7 +7,7 @@
 namespace member_thunk
 {
 	template<typename Func, typename Class, typename MemberFunc>
-#ifdef __cpp_lib_concepts // MIGRATION: IDE concept support
+#ifdef __cpp_concepts // MIGRATION: IDE concept support
 		requires is_compatible_function_types_v<Func, Class, MemberFunc>
 #endif
 	std::unique_ptr<thunk<Func>> make(Class* pThis, MemberFunc pFunc)
@@ -22,7 +22,7 @@ namespace member_thunk
 		MemberFunc pFunc;
 
 		template<typename Func>
-#ifdef __cpp_lib_concepts // MIGRATION: IDE concept support
+#ifdef __cpp_concepts // MIGRATION: IDE concept support
 			requires is_compatible_function_types_v<Func, Class, MemberFunc>
 #endif
 		operator std::unique_ptr<thunk<Func>>()
@@ -39,12 +39,12 @@ namespace member_thunk
 }
 
 #if defined(_M_IX86)
-#include "x86/x86_stack_thunk.hpp"
-#include "x86/x86_register_thunk.hpp"
+# include "x86/x86_stack_thunk.hpp"
+# include "x86/x86_register_thunk.hpp"
 #elif defined(_M_AMD64)
-#include "x64_thunk.hpp"
-#elif defined(_M_ARM)
-#error "Target architecture not supported"
+# include "x64_thunk.hpp"
 #elif defined(_M_ARM64)
-#error "Target architecture not supported"
+# include "arm64_thunk.hpp"
+#else
+# error "Target architecture not supported"
 #endif

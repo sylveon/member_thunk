@@ -1,5 +1,5 @@
 #pragma once
-#include "../base_thunk.hpp"
+#include "../crtp_thunk.hpp"
 #include <cstdint>
 
 #include "../architecture_traits.hpp"
@@ -13,7 +13,11 @@ namespace member_thunk
 	// mov eax, {function}
 	// mov ecx, {this}
 	// jmp eax
-#ifdef __cpp_lib_concepts // MIGRATION: IDE concept support
+	// int 3
+	// int 3
+	// int 3
+	// int 3
+#ifdef __cpp_concepts // MIGRATION: IDE concept support
 	template<typename Func>
 		requires is_architecture_v<architecture::x86> && is_this_on_register_v<Func>
 	class thunk<Func> final : public crtp_thunk<thunk<Func>, Func>
@@ -27,7 +31,7 @@ namespace member_thunk
 		std::uint8_t mov_ecx;
 		void* that;
 		std::uint8_t jmp_eax[2];
-		std::uint8_t int3[4];
+		std::uint8_t int_3[4];
 
 	public:
 		template<typename Class, typename MemberFunc>
@@ -37,7 +41,7 @@ namespace member_thunk
 			mov_ecx(0xB9),
 			that(pThis),
 			jmp_eax { 0xFF, 0xE0 },
-			int3 { 0xCC, 0xCC, 0xCC, 0xCC }
+			int_3 { 0xCC, 0xCC, 0xCC, 0xCC }
 		{
 			MEMBER_THUNK_STATIC_ASSERT_ALIGNOF_THIS();
 			MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(16);
