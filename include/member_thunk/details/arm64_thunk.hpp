@@ -1,5 +1,5 @@
 #pragma once
-#include "crtp_thunk.hpp"
+#include "base_thunk.hpp"
 #include <cstdint>
 
 namespace member_thunk
@@ -17,7 +17,7 @@ namespace member_thunk
 #else
 	template<typename Func, typename>
 #endif
-	class thunk final : public details::crtp_thunk<thunk<Func>, Func>
+	class thunk final : public details::base_thunk<thunk<Func>, Func>
 	{
 		std::uint8_t ldr_x0_16[4];
 		std::uint8_t ldr_x8_20[4];

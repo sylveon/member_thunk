@@ -1,74 +1,34 @@
 #pragma once
 #include <cstddef>
-#include <errhandlingapi.h>
-#include <heapapi.h>
-#include <memory>
 #include <memoryapi.h>
+#include <minwindef.h>
 #include <new>
 #include <processthreadsapi.h>
-#include <stdexcept>
-#include <system_error>
-#include <wil/resource.h>
-#include <minwindef.h>
-#include <winerror.h>
-#include <winnt.h>
+
+#include "error.hpp"
+#include "memory.hpp"
 
 #define MEMBER_THUNK_PACK __pragma(pack(push, 1))
 #define MEMBER_THUNK_UNPACK __pragma(pack(pop))
 
 namespace member_thunk::details
 {
-	static constexpr std::size_t thunk_alignment = 16;
-
-	class alignas(thunk_alignment) base_thunk
+	template<typename Derived, typename Func>
+	class alignas(16) base_thunk
 	{
-		using offset_t = unsigned char;
-
-		static constexpr bool is_aligned_heapalloc = MEMORY_ALLOCATION_ALIGNMENT >= thunk_alignment;
-
-		[[noreturn]] static void throw_win32_error(DWORD error, const char* message)
-		{
-			throw std::system_error(static_cast<int>(error), std::system_category(), message);
-		}
-
-		[[noreturn]] static void throw_last_error(const char* message)
-		{
-			throw_win32_error(GetLastError(), message);
-		}
-
-		static HANDLE get_executable_heap()
-		{
-			static const wil::unique_hheap executable_heap = []
-			{
-				if (wil::unique_hheap heap { HeapCreate(HEAP_CREATE_ENABLE_EXECUTE, 0, 0) })
-				{
-					return heap;
-				}
-				else
-				{
-					throw_last_error("HeapCreate failed");
-				}
-			}();
-
-			return executable_heap.get();
-		}
-
 		// Disable copy and move for all implementations
 		base_thunk(const base_thunk&) = delete;
 		base_thunk& operator=(const base_thunk&) = delete;
 
-	protected:
-		base_thunk() = default;
-
-		static void flush(const void* ptr, std::size_t size)
+		void flush()
 		{
-			if (!FlushInstructionCache(GetCurrentProcess(), ptr, size))
+			if (!FlushInstructionCache(GetCurrentProcess(), static_cast<Derived*>(this), sizeof(Derived)))
 			{
 				throw_last_error("FlushInstructionCache failed");
 			}
 		}
 
-		static void set_call_target(void* ptr, std::size_t size, bool valid)
+		void set_call_target(bool valid)
 		{
 			auto info = CFG_CALL_TARGET_INFO
 			{
@@ -76,70 +36,44 @@ namespace member_thunk::details
 				.Flags = static_cast<ULONG_PTR>(valid ? CFG_CALL_TARGET_VALID : 0)
 			};
 
-			if (!SetProcessValidCallTargets(GetCurrentProcess(), ptr, size, 1, &info))
+			if (!SetProcessValidCallTargets(GetCurrentProcess(), static_cast<Derived*>(this), sizeof(Derived), 1, &info))
 			{
 				throw_last_error("SetProcessValidCallTargets failed");
 			}
 		}
 
+	protected:
+		base_thunk() = default;
+
+		template<std::size_t size>
+		void init_thunk()
+		{
+			static_assert(sizeof(Derived) == size, "Thunk class does not have expected size");
+			static_assert(alignof(Derived) <= alignof(base_thunk), "Thunk class does not have expected alignment");
+
+			flush();
+			set_call_target(true);
+		}
+
+		~base_thunk() noexcept(false)
+		{
+			set_call_target(false);
+		}
+
 	public:
+		Func get_thunked_function() const noexcept
+		{
+			return reinterpret_cast<Func>(static_cast<const Derived*>(this));
+		}
+
 		void* operator new(std::size_t size)
 		{
-			std::size_t allocated_size = size;
-			if constexpr (!is_aligned_heapalloc)
-			{
-				allocated_size += thunk_alignment;
-			}
-
-			if (void* ptr = HeapAlloc(get_executable_heap(), 0, allocated_size))
-			{
-				if constexpr (!is_aligned_heapalloc)
-				{
-					const auto byte_ptr = static_cast<offset_t*>(ptr);
-
-					// Reserve some space to store the offset.
-					std::size_t usable_space = allocated_size - sizeof(offset_t);
-					ptr = byte_ptr + 1;
-
-					if (std::align(thunk_alignment, size, ptr, usable_space))
-					{
-						const auto aligned_byte_ptr = static_cast<offset_t*>(ptr);
-						aligned_byte_ptr[-1] = static_cast<offset_t>(aligned_byte_ptr - byte_ptr);
-					}
-					else
-					{
-						// todo: throw system error
-						throw std::range_error("Failed to align pointer in allocated memory block");
-					}
-				}
-
-				return ptr;
-			}
-			else
-			{
-				// HeapAlloc doesn't give us much info about why it fails, if
-				// it happens just assume it's because we ran out of memory.
-				throw_win32_error(ERROR_OUTOFMEMORY, "HeapAlloc failed");
-			}
+			return aligned_executable_alloc<alignof(Derived)>(size);
 		}
 
 		void operator delete(void* ptr) noexcept(false)
 		{
-			if (ptr)
-			{
-				const auto byte_ptr = static_cast<offset_t*>(ptr);
-
-				offset_t offset = 0;
-				if constexpr (!is_aligned_heapalloc)
-				{
-					offset = byte_ptr[-1];
-				}
-
-				if (!HeapFree(get_executable_heap(), 0, byte_ptr - offset))
-				{
-					throw_last_error("HeapFree failed");
-				}
-			}
+			return aligned_executable_free<alignof(Derived)>(ptr);
 		}
 	};
 }

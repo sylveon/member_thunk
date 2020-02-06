@@ -1,5 +1,5 @@
 #pragma once
-#include "../crtp_thunk.hpp"
+#include "../base_thunk.hpp"
 #include <cstdint>
 
 #include "calling_convention_traits.hpp"
@@ -16,10 +16,10 @@ namespace member_thunk
 #ifdef __cpp_concepts // MIGRATION: IDE concept support
 	template<typename Func>
 		requires details::is_this_on_stack_v<Func>
-	class thunk<Func> final : public details::crtp_thunk<thunk<Func>, Func>
+	class thunk<Func> final : public details::base_thunk<thunk<Func>, Func>
 #else
 	template<typename Func>
-	class thunk<Func, std::enable_if_t<details::is_this_on_stack_v<Func>>> final : public details::crtp_thunk<thunk<Func>, Func>
+	class thunk<Func, std::enable_if_t<details::is_this_on_stack_v<Func>>> final : public details::base_thunk<thunk<Func>, Func>
 #endif
 	{
 		std::uint8_t mov_eax;
