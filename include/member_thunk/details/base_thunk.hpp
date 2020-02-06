@@ -16,27 +16,15 @@
 #define MEMBER_THUNK_PACK __pragma(pack(push, 1))
 #define MEMBER_THUNK_UNPACK __pragma(pack(pop))
 
-#define MEMBER_THUNK_STRINGIFY_INNER(s) #s
-#define MEMBER_THUNK_STRINGIFY(s) MEMBER_THUNK_STRINGIFY_INNER(s)
-
-#define MEMBER_THUNK_BASE_THUNK_ALIGNMENT 16
-
-#define MEMBER_THUNK_STATIC_ASSERT_ALIGNOF_THIS() \
-	static_assert( \
-		alignof(decltype(*this)) == alignof(base_thunk), \
-		"Thunk class should be aligned on a " \
-			MEMBER_THUNK_STRINGIFY(MEMBER_THUNK_BASE_THUNK_ALIGNMENT) " bytes boundary" \
-	)
-#define MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(s) \
-	static_assert(sizeof(*this) == s, "Thunk class should be have a size of " #s " bytes")
-
-namespace member_thunk
+namespace member_thunk::details
 {
-	class alignas(MEMBER_THUNK_BASE_THUNK_ALIGNMENT) base_thunk
+	static constexpr std::size_t thunk_alignment = 16;
+
+	class alignas(thunk_alignment) base_thunk
 	{
 		using offset_t = unsigned char;
 
-		static constexpr bool is_aligned_heapalloc = MEMORY_ALLOCATION_ALIGNMENT >= MEMBER_THUNK_BASE_THUNK_ALIGNMENT;
+		static constexpr bool is_aligned_heapalloc = MEMORY_ALLOCATION_ALIGNMENT >= thunk_alignment;
 
 		[[noreturn]] static void throw_win32_error(DWORD error, const char* message)
 		{
@@ -50,7 +38,7 @@ namespace member_thunk
 
 		static HANDLE get_executable_heap()
 		{
-			static wil::unique_hheap executable_heap([]
+			static const wil::unique_hheap executable_heap = []
 			{
 				if (wil::unique_hheap heap { HeapCreate(HEAP_CREATE_ENABLE_EXECUTE, 0, 0) })
 				{
@@ -60,7 +48,7 @@ namespace member_thunk
 				{
 					throw_last_error("HeapCreate failed");
 				}
-			}());
+			}();
 
 			return executable_heap.get();
 		}
@@ -100,26 +88,27 @@ namespace member_thunk
 			std::size_t allocated_size = size;
 			if constexpr (!is_aligned_heapalloc)
 			{
-				allocated_size += alignof(base_thunk);
+				allocated_size += thunk_alignment;
 			}
 
 			if (void* ptr = HeapAlloc(get_executable_heap(), 0, allocated_size))
 			{
 				if constexpr (!is_aligned_heapalloc)
 				{
-					const auto byte_ptr = reinterpret_cast<offset_t*>(ptr);
+					const auto byte_ptr = static_cast<offset_t*>(ptr);
 
 					// Reserve some space to store the offset.
 					std::size_t usable_space = allocated_size - sizeof(offset_t);
 					ptr = byte_ptr + 1;
 
-					if (std::align(alignof(base_thunk), size, ptr, usable_space))
+					if (std::align(thunk_alignment, size, ptr, usable_space))
 					{
-						const auto aligned_byte_ptr = reinterpret_cast<offset_t*>(ptr);
+						const auto aligned_byte_ptr = static_cast<offset_t*>(ptr);
 						aligned_byte_ptr[-1] = static_cast<offset_t>(aligned_byte_ptr - byte_ptr);
 					}
 					else
 					{
+						// todo: throw system error
 						throw std::range_error("Failed to align pointer in allocated memory block");
 					}
 				}
@@ -134,11 +123,11 @@ namespace member_thunk
 			}
 		}
 
-		void operator delete(void* ptr, std::size_t) noexcept(false)
+		void operator delete(void* ptr) noexcept(false)
 		{
 			if (ptr)
 			{
-				const auto byte_ptr = reinterpret_cast<offset_t*>(ptr);
+				const auto byte_ptr = static_cast<offset_t*>(ptr);
 
 				offset_t offset = 0;
 				if constexpr (!is_aligned_heapalloc)

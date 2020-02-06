@@ -23,7 +23,7 @@ namespace member_thunk
 #else
 	template<typename Func, typename>
 #endif
-	class thunk final : public crtp_thunk<thunk<Func>, Func>
+	class thunk final : public details::crtp_thunk<thunk<Func>, Func>
 	{
 		std::uint8_t mov_rcx[2];
 		void* that;
@@ -41,10 +41,7 @@ namespace member_thunk
 			rex_jmp_rax { 0x48, 0xFF, 0xE0 },
 			int_3 { 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC }
 		{
-			MEMBER_THUNK_STATIC_ASSERT_ALIGNOF_THIS();
-			MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(32);
-
-			this->init_thunk();
+			this->init_thunk<32>();
 		}
 	};
 

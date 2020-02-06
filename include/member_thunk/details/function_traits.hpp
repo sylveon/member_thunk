@@ -1,7 +1,7 @@
 #pragma once
 #include <type_traits>
 
-namespace member_thunk
+namespace member_thunk::details
 {
 	template<typename T>
 	inline constexpr bool is_pointer_like_v = std::is_pointer_v<T> || (std::is_integral_v<T> && sizeof(T) == sizeof(void*));

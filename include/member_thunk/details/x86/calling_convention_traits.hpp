@@ -1,6 +1,6 @@
 #pragma once
 
-namespace member_thunk
+namespace member_thunk::details
 {
 	template<typename Func>
 	inline constexpr bool is_this_on_stack_v = false;

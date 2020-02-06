@@ -1,12 +1,11 @@
 #pragma once
 #include "base_thunk.hpp"
 
-namespace member_thunk
+namespace member_thunk::details
 {
 	template<typename Derived, typename Func>
 	class crtp_thunk : public base_thunk
 	{
-	private:
 		void flush()
 		{
 			base_thunk::flush(static_cast<Derived*>(this), sizeof(Derived));
@@ -18,8 +17,12 @@ namespace member_thunk
 		}
 
 	protected:
+		template<std::size_t size>
 		void init_thunk()
 		{
+			static_assert(sizeof(Derived) == size, "Thunk class does not have expected size");
+			static_assert(alignof(Derived) == thunk_alignment, "Thunk class does not have expected alignment");
+
 			flush();
 			set_call_target(true);
 		}
@@ -30,7 +33,7 @@ namespace member_thunk
 		}
 
 	public:
-		Func get_thunked_function() const
+		Func get_thunked_function() const noexcept
 		{
 			return reinterpret_cast<Func>(static_cast<const Derived*>(this));
 		}

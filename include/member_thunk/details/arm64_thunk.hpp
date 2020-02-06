@@ -17,7 +17,7 @@ namespace member_thunk
 #else
 	template<typename Func, typename>
 #endif
-	class thunk final : public crtp_thunk<thunk<Func>, Func>
+	class thunk final : public details::crtp_thunk<thunk<Func>, Func>
 	{
 		std::uint8_t ldr_x0_16[4];
 		std::uint8_t ldr_x8_20[4];
@@ -35,10 +35,7 @@ namespace member_thunk
 			that(pThis),
 			function(pFunc)
 		{
-			MEMBER_THUNK_STATIC_ASSERT_ALIGNOF_THIS();
-			MEMBER_THUNK_STATIC_ASSERT_SIZEOF_THIS(32);
-
-			this->init_thunk();
+			this->init_thunk<32>();
 		}
 	};
 
