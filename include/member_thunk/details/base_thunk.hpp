@@ -68,12 +68,26 @@ namespace member_thunk::details
 
 		void* operator new(std::size_t size)
 		{
-			return aligned_executable_alloc<alignof(Derived)>(size);
+			if constexpr (is_aligned_heapalloc_v<alignof(Derived)>)
+			{
+				return executable_alloc(size);
+			}
+			else
+			{
+				return aligned_executable_alloc<alignof(Derived)>(size);
+			}
 		}
 
 		void operator delete(void* ptr) noexcept(false)
 		{
-			return aligned_executable_free<alignof(Derived)>(ptr);
+			if constexpr (is_aligned_heapalloc_v<alignof(Derived)>)
+			{
+				return executable_free(ptr);
+			}
+			else
+			{
+				return aligned_executable_free(ptr);
+			}
 		}
 	};
 }
