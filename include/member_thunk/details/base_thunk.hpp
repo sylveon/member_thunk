@@ -8,8 +8,8 @@
 #include "error.hpp"
 #include "memory.hpp"
 
-#define MEMBER_THUNK_PACK __pragma(pack(push, 1))
-#define MEMBER_THUNK_UNPACK __pragma(pack(pop))
+#define MEMBER_THUNK_PACK _Pragma("pack(push, 1)")
+#define MEMBER_THUNK_UNPACK _Pragma("pack(pop)")
 
 namespace member_thunk::details
 {
