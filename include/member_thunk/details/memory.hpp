@@ -1,4 +1,5 @@
 #pragma once
+#include <bit>
 #include <cstddef>
 #include <heapapi.h>
 #include <memory>
@@ -12,9 +13,6 @@
 namespace member_thunk::details
 {
 	using offset_t = unsigned char;
-
-	template<std::size_t num>
-	inline constexpr bool is_power_of_two_v = num && ((num & (num - 1)) == 0);
 
 	template<std::size_t alignment>
 	inline constexpr bool is_aligned_heapalloc_v = MEMORY_ALLOCATION_ALIGNMENT >= alignment;
@@ -59,8 +57,11 @@ namespace member_thunk::details
 	}
 
 	template<std::size_t alignment>
-#ifdef __cpp_concepts // MIGRATION: IDE concept support
-		requires is_power_of_two_v<alignment>
+#ifdef __cpp_lib_bitops // MIGRATION: MSVC <bit> support
+	// once this is working, is_aligned_heapalloc_v can go directly inline
+	requires(std::has_single_bit(alignment))
+#else
+	requires(alignment != 0 && (alignment & (alignment - 1)) == 0)
 #endif
 	inline void* aligned_executable_alloc(std::size_t size)
 	{

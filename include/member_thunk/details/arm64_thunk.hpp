@@ -12,11 +12,7 @@ namespace member_thunk
 	// brk #0xF000
 	// {function}
 	// {this}
-#ifdef __cpp_concepts  // MIGRATION: IDE concept support
 	template<typename Func>
-#else
-	template<typename Func, typename>
-#endif
 	class thunk final : public details::base_thunk<thunk<Func>, Func>
 	{
 		std::uint8_t ldr_x8_16[4];

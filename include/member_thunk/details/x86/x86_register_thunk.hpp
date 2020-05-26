@@ -16,14 +16,9 @@ namespace member_thunk
 	// int 3
 	// int 3
 	// int 3
-#ifdef __cpp_concepts // MIGRATION: IDE concept support
 	template<typename Func>
-		requires details::is_this_on_register_v<Func>
-	class thunk<Func> final : public details::base_thunk<thunk<Func>, Func>
-#else
-	template<typename Func>
-	class thunk<Func, std::enable_if_t<details::is_this_on_register_v<Func>>> final : public details::base_thunk<thunk<Func>, Func>
-#endif
+	requires details::is_this_on_register_v<Func>
+	class thunk final : public details::base_thunk<thunk<Func>, Func>
 	{
 		std::uint8_t mov_eax;
 		void* function;
