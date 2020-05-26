@@ -58,10 +58,9 @@ namespace member_thunk::details
 
 	template<std::size_t alignment>
 #ifdef __cpp_lib_bitops // MIGRATION: MSVC <bit> support
-	// once this is working, is_aligned_heapalloc_v can go directly inline
-	requires(std::has_single_bit(alignment))
+	requires is_aligned_heapalloc_v<alignment> && (std::has_single_bit(alignment))
 #else
-	requires(alignment != 0 && (alignment & (alignment - 1)) == 0)
+	requires is_aligned_heapalloc_v<alignment> && (alignment != 0 && (alignment & (alignment - 1)) == 0)
 #endif
 	inline void* aligned_executable_alloc(std::size_t size)
 	{
