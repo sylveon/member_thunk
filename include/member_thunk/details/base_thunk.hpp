@@ -1,4 +1,5 @@
 #pragma once
+#include <concepts>
 #include <cstddef>
 #include <memoryapi.h>
 #include <minwindef.h>
@@ -46,18 +47,31 @@ namespace member_thunk::details
 		base_thunk() = default;
 
 		template<std::size_t size>
+		requires (sizeof(Derived) == size) && (alignof(Derived) <= alignof(base_thunk))
 		void init_thunk()
 		{
-			static_assert(sizeof(Derived) == size, "Thunk class does not have expected size");
-			static_assert(alignof(Derived) <= alignof(base_thunk), "Thunk class does not have expected alignment");
-
 			flush();
 			set_call_target(true);
 		}
 
-		~base_thunk() noexcept(false)
+		// This is sinful
+#ifdef __cpp_lib_concepts // MIGRATION: IDE concept support
+		template<std::unsigned_integral T>
+#else
+		template<typename T>
+#endif
+		requires (sizeof(Derived) % sizeof(T) == 0)
+		void fill(T val) noexcept
 		{
-			set_call_target(false);
+			const auto that = static_cast<Derived*>(this);
+
+			auto ptr = reinterpret_cast<volatile T*>(that);
+			const auto end = reinterpret_cast<volatile T*>(that + 1);
+
+			for (; ptr < end; ++ptr)
+			{
+				*ptr = val;
+			}
 		}
 
 	public:
@@ -78,15 +92,21 @@ namespace member_thunk::details
 			}
 		}
 
-		void operator delete(void* ptr) noexcept(false)
+		void operator delete(base_thunk* ptr, std::destroying_delete_t) noexcept(false)
 		{
+			const auto that = static_cast<Derived*>(ptr);
+			that->set_call_target(false);
+			that->clear();
+			that->flush();
+			that->~Derived();
+
 			if constexpr (is_aligned_heapalloc_v<alignof(Derived)>)
 			{
-				return executable_free(ptr);
+				return executable_free(that);
 			}
 			else
 			{
-				return aligned_executable_free(ptr);
+				return aligned_executable_free(that);
 			}
 		}
 	};

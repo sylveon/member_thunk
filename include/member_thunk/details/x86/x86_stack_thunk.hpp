@@ -3,7 +3,6 @@
 #include <cstdint>
 
 #include "calling_convention_traits.hpp"
-#include "../../common.hpp"
 
 namespace member_thunk
 {
@@ -17,12 +16,19 @@ namespace member_thunk
 	requires details::is_this_on_stack_v<Func>
 	class thunk final : public details::base_thunk<thunk<Func>, Func>
 	{
+		friend details::base_thunk<thunk<Func>, Func>;
+
 		std::uint8_t mov_eax;
 		void* function;
 		std::uint8_t mov_esp_plus_4[4];
 		void* that;
 		std::uint8_t jmp_eax[2];
 		std::uint8_t int_3;
+
+		void clear() noexcept
+		{
+			this->fill<std::uint8_t>(0xCC);
+		}
 
 	public:
 		thunk(void* pThis, void* pFunc) :

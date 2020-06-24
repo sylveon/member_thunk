@@ -21,12 +21,19 @@ namespace member_thunk
 	template<typename Func>
 	class thunk final : public details::base_thunk<thunk<Func>, Func>
 	{
+		friend details::base_thunk<thunk<Func>, Func>;
+
 		std::uint8_t mov_rax[2];
 		void* function;
 		std::uint8_t mov_rcx[2];
 		void* that;
 		std::uint8_t rex_jmp_rax[3];
 		std::uint8_t int_3[9];
+
+		void clear() noexcept
+		{
+			this->fill<std::uint8_t>(0xCC);
+		}
 
 	public:
 		thunk(void* pThis, void* pFunc) :
