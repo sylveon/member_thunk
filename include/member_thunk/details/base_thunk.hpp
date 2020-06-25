@@ -44,7 +44,7 @@ namespace member_thunk::details
 		}
 
 	protected:
-		base_thunk() = default;
+		constexpr base_thunk() noexcept = default;
 
 		template<std::size_t size>
 		requires (sizeof(Derived) == size) && (alignof(Derived) <= alignof(base_thunk))
@@ -94,19 +94,22 @@ namespace member_thunk::details
 
 		void operator delete(base_thunk* ptr, std::destroying_delete_t) noexcept(false)
 		{
-			const auto that = static_cast<Derived*>(ptr);
-			that->set_call_target(false);
-			that->clear();
-			that->flush();
-			that->~Derived();
+			if (ptr)
+			{
+				const auto that = static_cast<Derived*>(ptr);
+				that->set_call_target(false);
+				that->clear();
+				that->flush();
+				that->~Derived();
 
-			if constexpr (is_aligned_heapalloc_v<alignof(Derived)>)
-			{
-				return executable_free(that);
-			}
-			else
-			{
-				return aligned_executable_free(that);
+				if constexpr (is_aligned_heapalloc_v<alignof(Derived)>)
+				{
+					return executable_free(that);
+				}
+				else
+				{
+					return aligned_executable_free(that);
+				}
 			}
 		}
 	};
