@@ -1,0 +1,6 @@
+# Visual Studio Code config
+.vscode/
+
+# Visual Studio cache and config
+.vs/
+CppProperties.json

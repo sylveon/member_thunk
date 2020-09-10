@@ -40,19 +40,16 @@ namespace member_thunk::details
 	MEMBER_THUNK_GENERATE_NOEXCEPT_SPECIALIZATION(convention, std::type_identity, ) \
 	MEMBER_THUNK_GENERATE_NOEXCEPT_SPECIALIZATION(convention, std::add_const, const)
 
-	// Specifying any calling convention on a function pointer in non-x86 will
+	// Specifying any calling convention on a function pointer will
 	// explicitely specify the regular calling convention for that platform.
-	// /Gv would make __vectorcall implicit on regular pointers in x64.
+	// The compiler option /Gv would make __vectorcall implicit on regular
+	// pointers in x64.
 	MEMBER_THUNK_GENERATE_CONST_SPECIALIZATION(__stdcall)
-#if defined(_M_AMD64) || defined(_M_IX86)
-	// Same than normal x64 calling convention/x86 __fastcall but with vector
-	// registers used to pass vector parameters.
+#if defined(_M_AMD64)
+	// Same than normal x64 calling convention but with vector registers used
+	// to pass vector parameters.
 	MEMBER_THUNK_GENERATE_CONST_SPECIALIZATION(__vectorcall)
-#endif
-#if defined(_M_IX86)
-	MEMBER_THUNK_GENERATE_CONST_SPECIALIZATION(__cdecl)
-	MEMBER_THUNK_GENERATE_CONST_SPECIALIZATION(__fastcall)
-#endif
+#endif // defined(_M_AMD64)
 
 #undef MEMBER_THUNK_GENERATE_CONST_SPECIALIZATION
 #undef MEMBER_THUNK_GENERATE_NOEXCEPT_SPECIALIZATION
