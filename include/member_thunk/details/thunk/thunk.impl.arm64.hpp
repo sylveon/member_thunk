@@ -6,7 +6,7 @@
 
 namespace member_thunk::details
 {
-	thunk::thunk(void* that, void* func) noexcept :
+	inline thunk::thunk(void* that, void* func) noexcept :
 		ldr_x8_16 { 0x88, 0x00, 0x00, 0x58 },
 		ldr_x0_20 { 0xA0, 0x00, 0x00, 0x58 },
 		br_x8 { 0x00, 0x01, 0x1F, 0xD6 },
@@ -19,7 +19,7 @@ namespace member_thunk::details
 		std::memcpy(&brk_F000, &BREAK, sizeof(brk_F000));
 	}
 
-	thunk::~thunk() noexcept
+	inline thunk::~thunk() noexcept
 	{
 		static_assert(sizeof(thunk) % sizeof(std::uint32_t) == 0);
 

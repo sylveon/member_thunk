@@ -43,8 +43,6 @@ namespace member_thunk::details
 		std::uint8_t brk_F000[4];
 		void* function;
 		void* that;
-#else
-# error "Target architecture not supported"
 #endif
 
 		thunk() noexcept = default;
@@ -63,11 +61,3 @@ namespace member_thunk::details
 	};
 }
 #pragma pack(pop)
-
-#if defined(_M_AMD64)
-# include "./thunk.impl.x64.hpp"
-#elif defined(_M_ARM64)
-# include "./thunk.impl.arm64.hpp"
-#else
-# error "Target architecture not supported"
-#endif

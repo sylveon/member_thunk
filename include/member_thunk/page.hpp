@@ -81,5 +81,3 @@ namespace member_thunk
 		}
 	};
 }
-
-#include "./page.impl.hpp"

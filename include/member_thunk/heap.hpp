@@ -39,5 +39,3 @@ namespace member_thunk
 		~heap() noexcept(false);
 	};
 }
-
-#include "./heap.impl.hpp"

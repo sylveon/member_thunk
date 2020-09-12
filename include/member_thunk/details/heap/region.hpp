@@ -37,5 +37,3 @@ namespace member_thunk::details
 		~region() noexcept(false);
 	};
 }
-
-#include "./region.impl.hpp"
