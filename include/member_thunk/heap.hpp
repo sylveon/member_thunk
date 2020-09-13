@@ -2,7 +2,7 @@
 #include <forward_list>
 #include <minwindef.h>
 
-#include "./details/common.hpp"
+#include "./default_heap.hpp"
 
 namespace member_thunk
 {
