@@ -18,11 +18,17 @@ namespace member_thunk
 		auto& new_list = was_full ? used_regions : free_regions;
 
 		std::scoped_lock guard(lock);
-		for (auto before_it = current_list.before_begin(), it = current_list.begin(); it != current_list.end(); ++it, ++before_it)
+		auto it = current_list.before_begin();
+		while (true)
 		{
-			if (&*it == region)
+			const auto before = it++;
+			if (it == current_list.end())
 			{
-				new_list.splice_after(new_list.before_begin(), current_list, before_it);
+				break;
+			}
+			else if (&*it == region)
+			{
+				new_list.splice_after(new_list.before_begin(), current_list, before);
 				return;
 			}
 		}
