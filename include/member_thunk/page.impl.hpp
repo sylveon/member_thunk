@@ -1,6 +1,7 @@
 #pragma once
 #include "./page.hpp"
 #include <algorithm>
+#include <memory>
 #include <memoryapi.h>
 #include <processthreadsapi.h>
 #include <vector>
@@ -25,10 +26,11 @@ namespace member_thunk
 	{
 		// fill the entire page with debug breaks by creating a thunk and then destroying it.
 		// this is required because zeroes are valid instructions in x64.
-		std::for_each(begin, page_end(), [](details::thunk& thunk) noexcept
-		{
-			(new (&thunk) details::thunk())->~thunk();
-		});
+		std::for_each(begin, page_end(),
+			[](details::thunk& thunk) noexcept
+			{
+				(new (&thunk) details::thunk())->~thunk();
+			});
 	}
 
 	template<typename T>
@@ -45,14 +47,14 @@ namespace member_thunk
 			std::vector<CFG_CALL_TARGET_INFO> target_info;
 			target_info.resize(end - begin);
 
-			std::transform(begin, end, target_info.begin(), [this, valid](details::thunk& thunk) noexcept
-			{
-				return CFG_CALL_TARGET_INFO
+			std::transform(begin, end, target_info.begin(),
+				[this, valid](details::thunk& thunk) noexcept
 				{
-					.Offset = static_cast<ULONG_PTR>(byte_offset(&thunk)),
-					.Flags = static_cast<ULONG_PTR>(valid ? CFG_CALL_TARGET_VALID : 0)
-				};
-			});
+					return CFG_CALL_TARGET_INFO {
+						.Offset = static_cast<ULONG_PTR>(byte_offset(&thunk)),
+						.Flags = static_cast<ULONG_PTR>(valid ? CFG_CALL_TARGET_VALID : 0),
+					};
+				});
 
 			if (!SetProcessValidCallTargets(GetCurrentProcess(), begin, size, static_cast<ULONG>(target_info.size()), target_info.data()))
 			{
@@ -70,10 +72,7 @@ namespace member_thunk
 			details::virtual_protect(begin, size, PAGE_READWRITE);
 		}
 
-		std::for_each(begin, end, [](details::thunk& thunk)
-		{
-			thunk.~thunk();
-		});
+		std::destroy(begin, end);
 
 		if (executable)
 		{

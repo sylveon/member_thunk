@@ -52,11 +52,9 @@ namespace member_thunk::details
 		thunk& operator=(const thunk&) = delete;
 
 		// private placement new
-		constexpr void* operator new(std::size_t, void* ptr) noexcept
-		{
-			return ptr;
-		}
+		constexpr void* operator new(std::size_t, void* ptr) noexcept { return ptr; }
 
+	public:
 		~thunk() noexcept;
 	};
 }

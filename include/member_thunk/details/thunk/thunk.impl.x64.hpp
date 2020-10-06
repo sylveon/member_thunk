@@ -19,8 +19,7 @@ namespace member_thunk::details
 
 	inline thunk::~thunk() noexcept
 	{
-		// TODO: uncomment when https://github.com/microsoft/STL/wiki/Changelog#expected-in-vs-2019-168-preview-3 ships
-#pragma warning(suppress: 4244)
-		std::fill(reinterpret_cast<volatile std::uint8_t*>(this), reinterpret_cast<volatile std::uint8_t*>(this + 1), /*static_cast<std::uint8_t>*/(0xCC));
+		std::fill(reinterpret_cast<volatile std::uint8_t*>(this), reinterpret_cast<volatile std::uint8_t*>(this + 1),
+			static_cast<std::uint8_t>(0xCC));
 	}
 }

@@ -18,6 +18,7 @@ namespace member_thunk::details
 	template<typename MemberFunc>
 	using get_this_ptr_t = std::add_pointer_t<typename get_this<MemberFunc>::type>;
 
+	// clang-format off
 #define MEMBER_THUNK_GENERATE_MEMBER_SPECIALIZATION(convention, inheritance, specifiers, ptr_specifiers) \
 	template<typename Ret, typename Class, typename FirstArg, typename... Args> \
 	inline constexpr bool is_compatible_function_types_v< \
@@ -28,6 +29,7 @@ namespace member_thunk::details
 #define MEMBER_THUNK_GENERATE_THIS_SPECIALIZATION(convention, inheritance, specifiers) \
 	template<typename Ret, typename Class, typename... Args> \
 	struct get_this<Ret(convention Class::*)(Args...) specifiers> : inheritance<Class> { };
+	// clang-format on
 
 #define MEMBER_THUNK_GENERATE_NOEXCEPT_SPECIALIZATION(convention, inheritance, specifiers) \
 	MEMBER_THUNK_GENERATE_MEMBER_SPECIALIZATION(convention, inheritance, specifiers, ) \

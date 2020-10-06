@@ -1,8 +1,9 @@
 #pragma once
-#include "./exception.hpp"
 #include <errhandlingapi.h>
-#include <string_view>
 #include <minwindef.h>
+#include <string_view>
+
+#include "./exception.hpp"
 
 namespace member_thunk
 {
@@ -12,22 +13,12 @@ namespace member_thunk
 		DWORD error;
 
 	public:
-		constexpr win32_error(std::string_view api, DWORD error) noexcept :
-			exception("A Windows API call failed."),
-			api(api),
-			error(error)
+		constexpr win32_error(std::string_view api, DWORD error) noexcept : exception("A Windows API call failed."), api(api), error(error)
 		{ }
 
 		win32_error(std::string_view api) noexcept : win32_error(api, GetLastError()) { }
 
-		constexpr std::string_view failing_api() const noexcept
-		{
-			return api;
-		}
-
-		constexpr DWORD error_code() const noexcept
-		{
-			return error;
-		}
+		constexpr std::string_view failing_api() const noexcept { return api; }
+		constexpr DWORD error_code() const noexcept { return error; }
 	};
 }

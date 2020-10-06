@@ -59,7 +59,8 @@ namespace member_thunk::details
 	template<typename T>
 	region<T>::region(heap<T>* parent) :
 		parent(parent),
-		base(static_cast<std::byte*>(virtual_alloc(nullptr, parent->allocation_granularity, MEM_RESERVE, PAGE_EXECUTE_READ | PAGE_TARGETS_INVALID)))
+		base(static_cast<std::byte*>(
+			virtual_alloc(nullptr, parent->allocation_granularity, MEM_RESERVE, PAGE_EXECUTE_READ | PAGE_TARGETS_INVALID)))
 	{
 		if (page_availability.size() != parent->allocation_granularity / parent->page_size)
 		{

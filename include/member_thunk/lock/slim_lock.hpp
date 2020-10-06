@@ -12,14 +12,7 @@ namespace member_thunk
 		slim_lock(const slim_lock&) = delete;
 		slim_lock& operator=(const slim_lock&) = delete;
 
-		void lock() noexcept
-		{
-			AcquireSRWLockExclusive(&srwlock);
-		}
-
-		void unlock() noexcept
-		{
-			ReleaseSRWLockExclusive(&srwlock);
-		}
+		void lock() noexcept { AcquireSRWLockExclusive(&srwlock); }
+		void unlock() noexcept { ReleaseSRWLockExclusive(&srwlock); }
 	};
 }

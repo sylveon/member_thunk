@@ -8,3 +8,7 @@ trim_trailing_whitespace = true
 [*.hpp]
 indent_style = tab
 indent_size = 4
+
+[.clang-format]
+indent_style = space
+indent_size = 2

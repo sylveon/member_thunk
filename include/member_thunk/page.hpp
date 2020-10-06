@@ -1,7 +1,7 @@
 #pragma once
 #include <cstddef>
-#include <utility>
 #include <minwindef.h>
+#include <utility>
 
 #include "./default_heap.hpp"
 #include "./details/function_traits.hpp"
@@ -62,8 +62,10 @@ namespace member_thunk
 		}
 
 		template<typename Func, typename MemberFunc>
+		// clang-format off
 		requires details::is_compatible_function_types_v<Func, MemberFunc>
 		Func make_thunk(details::get_this_ptr_t<MemberFunc> that, MemberFunc func)
+		// clang-format on
 		{
 			// slightly cursed.
 			return reinterpret_cast<Func>(new_thunk(const_cast<void*>(static_cast<const void*>(that)), reinterpret_cast<void*&>(func)));

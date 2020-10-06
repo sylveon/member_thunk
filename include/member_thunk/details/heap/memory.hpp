@@ -2,8 +2,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <memoryapi.h>
-#include <processthreadsapi.h>
 #include <minwindef.h>
+#include <processthreadsapi.h>
 
 #include "../../error/win32_error.hpp"
 
