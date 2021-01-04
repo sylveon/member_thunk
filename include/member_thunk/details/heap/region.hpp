@@ -22,6 +22,8 @@ namespace member_thunk::details
 		heap<T>* parent;
 		std::byte* base;
 		std::bitset<16> page_availability;
+
+#pragma warning(suppress: 4648) // TODO: remove once supported
 		[[no_unique_address]] T lock;
 
 		region(const region&) = delete;

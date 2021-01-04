@@ -1,6 +1,7 @@
 #pragma once
 #include "./page.hpp"
 #include <algorithm>
+#include <iterator>
 #include <memory>
 #include <memoryapi.h>
 #include <processthreadsapi.h>
@@ -26,7 +27,7 @@ namespace member_thunk
 	{
 		// fill the entire page with debug breaks by creating a thunk and then destroying it.
 		// this is required because zeroes are valid instructions in x64.
-		std::for_each(begin, page_end(),
+		std::ranges::for_each(begin, page_end(),
 			[](details::thunk& thunk) noexcept
 			{
 				(new (&thunk) details::thunk())->~thunk();
@@ -45,9 +46,9 @@ namespace member_thunk
 		if (policy.EnableControlFlowGuard)
 		{
 			std::vector<CFG_CALL_TARGET_INFO> target_info;
-			target_info.resize(end - begin);
+			target_info.reserve(end - begin);
 
-			std::transform(begin, end, target_info.begin(),
+			std::ranges::transform(begin, end, std::back_inserter(target_info),
 				[this, valid](details::thunk& thunk) noexcept
 				{
 					return CFG_CALL_TARGET_INFO {
@@ -72,7 +73,7 @@ namespace member_thunk
 			details::virtual_protect(begin, size, PAGE_READWRITE);
 		}
 
-		std::destroy(begin, end);
+		std::ranges::destroy(begin, end);
 
 		if (executable)
 		{

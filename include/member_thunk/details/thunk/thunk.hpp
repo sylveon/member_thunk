@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -53,6 +54,13 @@ namespace member_thunk::details
 
 		// private placement new
 		constexpr void* operator new(std::size_t, void* ptr) noexcept { return ptr; }
+
+		template<typename T>
+		void fill(T value) noexcept
+		{
+			static_assert(sizeof(thunk) % sizeof(T) == 0);
+			std::ranges::fill(reinterpret_cast<volatile T*>(this), reinterpret_cast<volatile T*>(this + 1), value);
+		}
 
 	public:
 		~thunk() noexcept;

@@ -1,6 +1,5 @@
 #pragma once
 #include "./thunk.hpp"
-#include <algorithm>
 #include <bit>
 #include <cstring>
 
@@ -21,9 +20,6 @@ namespace member_thunk::details
 
 	inline thunk::~thunk() noexcept
 	{
-		static_assert(sizeof(thunk) % sizeof(std::uint32_t) == 0);
-
-		std::fill(reinterpret_cast<volatile std::uint32_t*>(this), reinterpret_cast<volatile std::uint32_t*>(this + 1),
-			std::bit_cast<std::uint32_t>(BREAK));
+		fill(std::bit_cast<std::uint32_t>(BREAK));
 	}
 }

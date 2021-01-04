@@ -1,6 +1,5 @@
 #pragma once
 #include "./thunk.hpp"
-#include <algorithm>
 #include <cstring>
 
 namespace member_thunk::details
@@ -19,7 +18,6 @@ namespace member_thunk::details
 
 	inline thunk::~thunk() noexcept
 	{
-		std::fill(reinterpret_cast<volatile std::uint8_t*>(this), reinterpret_cast<volatile std::uint8_t*>(this + 1),
-			static_cast<std::uint8_t>(0xCC));
+		fill<std::uint8_t>(0xCC);
 	}
 }

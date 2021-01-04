@@ -1,6 +1,5 @@
 #pragma once
 #include "./heap.hpp"
-#include <algorithm>
 #include <mutex>
 #include <sysinfoapi.h>
 
