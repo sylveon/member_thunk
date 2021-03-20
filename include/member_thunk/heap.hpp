@@ -25,8 +25,6 @@ namespace member_thunk
 		// because push_back followed by pop_back on a vector may throw, but splice_after does not.
 		std::forward_list<details::region<T>> full_regions, used_regions, free_regions;
 		DWORD page_size, allocation_granularity;
-
-#pragma warning(suppress: 4648) // TODO: remove once supported
 		[[no_unique_address]] T lock;
 
 		void update_region(details::region<T>* region, bool was_full);

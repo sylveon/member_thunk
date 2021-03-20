@@ -73,8 +73,7 @@ namespace member_thunk
 			details::virtual_protect(begin, size, PAGE_READWRITE);
 		}
 
-		// TODO: use std::ranges::destroy when available in VS stable
-		std::destroy(begin, end);
+		std::ranges::destroy(begin, end);
 
 		if (executable)
 		{
