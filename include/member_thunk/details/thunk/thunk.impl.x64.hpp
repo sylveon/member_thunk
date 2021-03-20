@@ -11,13 +11,10 @@ namespace member_thunk::details
 		that(that),
 		rex_jmp_rax { 0x48, 0xFF, 0xE0 }
 	{
-		static_assert(sizeof(thunk) == 32);
+		static_assert(sizeof(thunk) == 32, "thunk has invalid size (expected 32 bytes)");
 
 		std::memset(int_3, 0xCC, sizeof(int_3));
 	}
 
-	inline thunk::~thunk() noexcept
-	{
-		fill<std::uint8_t>(0xCC);
-	}
+	inline thunk::~thunk() noexcept { fill<std::uint8_t>(0xCC); }
 }

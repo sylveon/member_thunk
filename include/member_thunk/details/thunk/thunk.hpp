@@ -58,7 +58,7 @@ namespace member_thunk::details
 		template<typename T>
 		void fill(T value) noexcept
 		{
-			static_assert(sizeof(thunk) % sizeof(T) == 0);
+			static_assert(sizeof(thunk) % sizeof(T) == 0, "sizeof(thunk) needs to be a multiple of sizeof(T)");
 			std::ranges::fill(reinterpret_cast<volatile T*>(this), reinterpret_cast<volatile T*>(this + 1), value);
 		}
 

@@ -12,14 +12,11 @@ namespace member_thunk::details
 		function(func),
 		that(that)
 	{
-		static_assert(sizeof(thunk) == 32);
-		static_assert(sizeof(brk_F000) == sizeof(BREAK));
+		static_assert(sizeof(thunk) == 32, "thunk has invalid size (expected 32 bytes)");
+		static_assert(sizeof(brk_F000) == sizeof(BREAK), "mismatch between size of member break instruction and constant");
 
 		std::memcpy(&brk_F000, &BREAK, sizeof(brk_F000));
 	}
 
-	inline thunk::~thunk() noexcept
-	{
-		fill(std::bit_cast<std::uint32_t>(BREAK));
-	}
+	inline thunk::~thunk() noexcept { fill(std::bit_cast<std::uint32_t>(BREAK)); }
 }
