@@ -3,7 +3,6 @@
 #include <mutex>
 #include <sysinfoapi.h>
 
-#include "./details/heap/region.hpp"
 #include "./error/heap_not_empty.hpp"
 #include "./error/invalid_memory_layout.hpp"
 #include "./page.hpp"
@@ -13,24 +12,18 @@ namespace member_thunk
 	template<typename T>
 	void heap<T>::update_region(details::region<T>* region, bool was_full)
 	{
-		auto& current_list = was_full ? full_regions : used_regions;
-		auto& new_list = was_full ? used_regions : free_regions;
+		using node_t = typename details::list<details::region<T>>::node;
+
+		static_assert(
+			std::is_standard_layout_v<node_t>, "node needs to be standard layout for casting from T* to node* to be well-defined");
+
+		static_assert(offsetof(node_t, item) == 0, "item needs to be the first member for casting from T* to node* to be well-defined");
+
+		auto& source = was_full ? full_regions : used_regions;
+		auto& dest = was_full ? used_regions : free_regions;
 
 		std::scoped_lock guard(lock);
-		auto it = current_list.before_begin();
-		while (true)
-		{
-			const auto before = it++;
-			if (it == current_list.end())
-			{
-				break;
-			}
-			else if (&*it == region)
-			{
-				new_list.splice_after(new_list.before_begin(), current_list, before);
-				return;
-			}
-		}
+		dest.take_node(source, reinterpret_cast<node_t*>(region));
 	}
 
 	template<typename T>
@@ -54,7 +47,7 @@ namespace member_thunk
 		std::scoped_lock guard(lock);
 		if (!used_regions.empty())
 		{
-			auto& region = used_regions.front();
+			auto& region = used_regions.head()->item;
 			std::unique_lock region_guard(region.lock);
 
 			auto page = region.commit_page();
@@ -63,7 +56,7 @@ namespace member_thunk
 				// the heap lock allows the region to be unlocked while spliced - if it tries to call update_region
 				// while being spliced, it will block until we return from this method.
 				region_guard.unlock();
-				full_regions.splice_after(full_regions.before_begin(), used_regions, used_regions.before_begin());
+				full_regions.take_head(used_regions);
 			}
 
 			return page;
@@ -72,12 +65,12 @@ namespace member_thunk
 		{
 			if (free_regions.empty())
 			{
-				free_regions.emplace_front(this);
+				free_regions.emplace_head(this);
 			}
 
 			// no need to lock the region here, there are no pages that might attempt to free.
-			auto page = free_regions.front().commit_page();
-			used_regions.splice_after(used_regions.before_begin(), free_regions, free_regions.before_begin());
+			auto page = free_regions.head()->item.commit_page();
+			used_regions.take_head(free_regions);
 
 			return page;
 		}

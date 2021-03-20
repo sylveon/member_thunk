@@ -5,6 +5,7 @@
 #endif // !defined(MEMBER_THUNK_DISABLE_DEFAULT_HEAP)
 
 #include "./details/heap/region.impl.hpp"
+#include "./details/list.impl.hpp"
 #include "./heap.impl.hpp"
 #include "./page.impl.hpp"
 

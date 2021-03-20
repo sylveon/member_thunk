@@ -1,19 +1,14 @@
 #pragma once
-#include <forward_list>
 #include <minwindef.h>
 
 #include "./default_heap.hpp"
+#include "./details/heap/region.hpp"
+#include "./details/list.hpp"
 
 namespace member_thunk
 {
 	template<typename T>
 	class page;
-
-	namespace details
-	{
-		template<typename T>
-		class region;
-	}
 
 	template<typename T = details::default_lock_t>
 	class heap final
@@ -22,9 +17,8 @@ namespace member_thunk
 		friend details::region<T>;
 
 		// we use a linked list to obtain pointer stability, and remove exception failure points.
-		// because push_back followed by pop_back on a vector may throw, but splice_after does not.
-		std::forward_list<details::region<T>> full_regions, used_regions, free_regions;
-		DWORD page_size, allocation_granularity;
+		details::list<details::region<T>> full_regions, used_regions, free_regions;
+		DWORD page_size, allocation_granularity; // TODO: make these statics
 		[[no_unique_address]] T lock;
 
 		void update_region(details::region<T>* region, bool was_full);
