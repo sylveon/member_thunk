@@ -42,7 +42,7 @@ namespace member_thunk::details
 		template<typename... Args>
 		void emplace_head(Args&&... args)
 		{
-			auto current = head_ptr;
+			const auto current = head_ptr;
 			head_ptr = new node(current, std::forward<Args>(args)...);
 			if (current)
 			{
