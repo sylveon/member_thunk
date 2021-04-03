@@ -5,6 +5,7 @@
 namespace member_thunk::details
 {
 	inline thunk::thunk(void* that, void* func) noexcept :
+		endbr64 { 0xF3, 0x0F, 0x1E, 0xFA },
 		mov_rax { 0x48, 0xB8 },
 		function(func),
 		mov_rcx { 0x48, 0xB9 },
