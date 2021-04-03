@@ -1,10 +1,8 @@
 #pragma once
 #include "./heap.hpp"
 #include <mutex>
-#include <sysinfoapi.h>
 
 #include "./error/heap_not_empty.hpp"
-#include "./error/invalid_memory_layout.hpp"
 #include "./page.hpp"
 
 namespace member_thunk
@@ -27,19 +25,8 @@ namespace member_thunk
 	}
 
 	template<typename T>
-	heap<T>::heap()
-	{
-		SYSTEM_INFO info;
-		GetSystemInfo(&info);
-
-		page_size = info.dwPageSize;
-		allocation_granularity = info.dwAllocationGranularity;
-
-		if (allocation_granularity % page_size != 0)
-		{
-			throw invalid_memory_layout();
-		}
-	}
+	heap<T>::heap() : layout(details::memory_layout::get_for_current_system())
+	{ }
 
 	template<typename T>
 	page<T> heap<T>::allocate_page()

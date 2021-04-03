@@ -1,7 +1,6 @@
 #pragma once
-#include <minwindef.h>
-
 #include "./default_heap.hpp"
+#include "./details/heap/memory.hpp"
 #include "./details/heap/region.hpp"
 #include "./details/list.hpp"
 
@@ -18,7 +17,7 @@ namespace member_thunk
 
 		// we use a linked list to obtain pointer stability, and remove exception failure points.
 		details::list<details::region<T>> full_regions, used_regions, free_regions;
-		DWORD page_size, allocation_granularity; // TODO: make these statics
+		details::memory_layout layout;
 		[[no_unique_address]] T lock;
 
 		void update_region(details::region<T>* region, bool was_full);

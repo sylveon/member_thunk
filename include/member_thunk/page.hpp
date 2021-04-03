@@ -1,6 +1,6 @@
 #pragma once
 #include <cstddef>
-#include <minwindef.h>
+#include <cstdint>
 #include <utility>
 
 #include "./default_heap.hpp"
@@ -22,7 +22,7 @@ namespace member_thunk
 		friend details::region<T>;
 
 		bool executable; // whether the page has been marked executable
-		DWORD size; // saved to skip double indirection, does not affect class size because there would be padding otherwise
+		std::uint32_t size; // saved to skip double indirection, does not affect class size because there would be padding otherwise
 		details::region<T>* parent; // the region this page is from
 		details::thunk* begin; // the beginning of the page
 		details::thunk* end; // pointer past the end of currently created thunks

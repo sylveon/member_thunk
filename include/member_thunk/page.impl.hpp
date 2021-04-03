@@ -20,7 +20,7 @@ namespace member_thunk
 	template<typename T>
 	page<T>::page(details::region<T>* parent, std::byte* address) :
 		executable(false),
-		size(parent->parent->page_size),
+		size(parent->parent->layout.page_size),
 		parent(parent),
 		begin(static_cast<details::thunk*>(details::virtual_alloc(address, size, MEM_COMMIT, PAGE_READWRITE))),
 		end(begin)

@@ -3,7 +3,6 @@
 #include <bit>
 #include <mutex>
 
-#include "../../error/invalid_memory_layout.hpp"
 #include "../../error/region_full.hpp"
 #include "../../error/region_not_empty.hpp"
 #include "../../heap.hpp"
@@ -40,7 +39,7 @@ namespace member_thunk::details
 	{
 		// implied lock from heap
 		auto page_index = find_free_page();
-		page new_page(this, base + (page_index * parent->page_size));
+		page new_page(this, base + (page_index * parent->layout.page_size));
 
 		set_page_status(page_index, true);
 		return new_page;
@@ -51,7 +50,7 @@ namespace member_thunk::details
 	{
 		std::scoped_lock guard(lock);
 		bool was_full = full();
-		set_page_status(static_cast<int>((page - base) / parent->page_size), false);
+		set_page_status(static_cast<int>((page - base) / parent->layout.page_size), false);
 
 		if (was_full || page_availability == 0)
 		{
@@ -70,13 +69,9 @@ namespace member_thunk::details
 	region<T>::region(heap<T>* parent) :
 		parent(parent),
 		base(static_cast<std::byte*>(
-			virtual_alloc(nullptr, parent->allocation_granularity, MEM_RESERVE, PAGE_EXECUTE_READ | PAGE_TARGETS_INVALID)))
-	{
-		if (page_availability.size() != parent->allocation_granularity / parent->page_size)
-		{
-			throw invalid_memory_layout();
-		}
-	}
+			virtual_alloc(nullptr, parent->layout.allocation_granularity, MEM_RESERVE, PAGE_EXECUTE_READ | PAGE_TARGETS_INVALID))),
+		page_availability(0)
+	{ }
 
 	template<typename T>
 	region<T>::~region() noexcept(false)
