@@ -1,6 +1,7 @@
 #pragma once
 #include "./memory.hpp"
 #include <memoryapi.h>
+#include <minwindef.h>
 #include <processthreadsapi.h>
 #include <sysinfoapi.h>
 
