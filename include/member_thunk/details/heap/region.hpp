@@ -1,6 +1,7 @@
 #pragma once
-#include <bitset>
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 
 namespace member_thunk
 {
@@ -13,6 +14,9 @@ namespace member_thunk
 
 namespace member_thunk::details
 {
+	using page_availability_t = std::uint16_t;
+	static constexpr int pages_per_region = std::numeric_limits<page_availability_t>::digits;
+
 	template<typename T>
 	class region final
 	{
@@ -21,16 +25,17 @@ namespace member_thunk::details
 
 		heap<T>* parent;
 		std::byte* base;
-		std::bitset<16> page_availability;
+		page_availability_t page_availability;
 		[[no_unique_address]] T lock;
 
 		region(const region&) = delete;
 		region& operator=(const region&) = delete;
 
 		bool full() const noexcept;
-		std::size_t find_free_page() const;
+		int find_free_page() const;
 		page<T> commit_page();
 		void mark_decommited(std::byte* page);
+		void set_page_status(int index, bool status) noexcept;
 
 	public:
 		region(heap<T>* parent);
