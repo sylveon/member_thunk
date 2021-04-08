@@ -13,15 +13,20 @@ namespace member_thunk::details
 {
 	inline memory_layout memory_layout::get_for_current_system()
 	{
-		SYSTEM_INFO info;
-		GetSystemInfo(&info); // never fails
-
-		if (info.dwAllocationGranularity % info.dwPageSize != 0 || info.dwAllocationGranularity / info.dwPageSize != pages_per_region)
+		static const auto layout = []
 		{
-			throw invalid_memory_layout();
-		}
+			SYSTEM_INFO info;
+			GetSystemInfo(&info); // never fails
 
-		return { .page_size = info.dwPageSize, .allocation_granularity = info.dwAllocationGranularity };
+			if (info.dwAllocationGranularity % info.dwPageSize != 0 || info.dwAllocationGranularity / info.dwPageSize != pages_per_region)
+			{
+				throw invalid_memory_layout();
+			}
+
+			return memory_layout { .page_size = info.dwPageSize, .allocation_granularity = info.dwAllocationGranularity };
+		}();
+
+		return layout;
 	}
 
 	inline void flush_instruction_cache(void* ptr, std::size_t size)
