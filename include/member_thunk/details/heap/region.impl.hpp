@@ -2,6 +2,7 @@
 #include "./region.hpp"
 #include <bit>
 #include <mutex>
+#include <winapifamily.h>
 
 #include "../../error/region_full.hpp"
 #include "../../error/region_not_empty.hpp"
@@ -11,6 +12,12 @@
 
 namespace member_thunk::details
 {
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+	static constexpr std::uint32_t default_region_protection = PAGE_EXECUTE_READ | PAGE_TARGETS_INVALID;
+#else
+	static constexpr std::uint32_t default_region_protection = PAGE_READWRITE;
+#endif
+
 	template<typename T>
 	bool region<T>::full() const noexcept
 	{
@@ -68,8 +75,8 @@ namespace member_thunk::details
 	template<typename T>
 	region<T>::region(heap<T>* parent) :
 		parent(parent),
-		base(static_cast<std::byte*>(
-			virtual_alloc(nullptr, parent->layout.allocation_granularity, MEM_RESERVE, PAGE_EXECUTE_READ | PAGE_TARGETS_INVALID))),
+		base(
+			static_cast<std::byte*>(virtual_alloc(nullptr, parent->layout.allocation_granularity, MEM_RESERVE, default_region_protection))),
 		page_availability(0)
 	{ }
 

@@ -6,6 +6,7 @@
 #include <memoryapi.h>
 #include <processthreadsapi.h>
 #include <vector>
+#include <winapifamily.h>
 
 #include "./details/heap/memory.hpp"
 #include "./details/heap/region.hpp"
@@ -17,6 +18,15 @@
 
 namespace member_thunk
 {
+	namespace details
+	{
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+		static constexpr std::uint32_t executable_page_protection = PAGE_EXECUTE_READ | PAGE_TARGETS_INVALID;
+#else
+		static constexpr std::uint32_t executable_page_protection = PAGE_EXECUTE_READ;
+#endif
+	}
+
 	template<typename T>
 	page<T>::page(details::region<T>* parent, std::byte* address) :
 		executable(false),
@@ -35,8 +45,9 @@ namespace member_thunk
 	}
 
 	template<typename T>
-	void page<T>::set_call_target(bool valid)
+	void page<T>::set_call_target([[maybe_unused]] bool valid)
 	{
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 		PROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY policy;
 		if (!GetProcessMitigationPolicy(GetCurrentProcess(), ProcessControlFlowGuardPolicy, &policy, sizeof(policy)))
 		{
@@ -62,6 +73,7 @@ namespace member_thunk
 				throw win32_error("SetProcessValidCallTargets");
 			}
 		}
+#endif
 	}
 
 	template<typename T>
@@ -124,10 +136,10 @@ namespace member_thunk
 		if (!executable)
 		{
 			details::flush_instruction_cache(begin, byte_offset(end));
-			details::virtual_protect(begin, size, PAGE_EXECUTE_READ | PAGE_TARGETS_NO_UPDATE);
-			set_call_target(true);
-
+			details::virtual_protect(begin, size, details::executable_page_protection);
 			executable = true;
+
+			set_call_target(true);
 		}
 	}
 }

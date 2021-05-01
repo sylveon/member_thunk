@@ -22,4 +22,6 @@ namespace member_thunk
 	inline page<details::default_lock_t> allocate_page() { return details::get_default_heap().allocate_page(); }
 	inline void compact() { details::get_default_heap().compact(); }
 }
+
+#	undef MEMBER_THUNK_DEFAULT_HEAP_LIFETIME
 #endif // !defined(MEMBER_THUNK_DISABLE_DEFAULT_HEAP)

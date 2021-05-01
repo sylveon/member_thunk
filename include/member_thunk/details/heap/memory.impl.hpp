@@ -4,10 +4,22 @@
 #include <minwindef.h>
 #include <processthreadsapi.h>
 #include <sysinfoapi.h>
+#include <winapifamily.h>
 
 #include "../../error/invalid_memory_layout.hpp"
 #include "../../error/win32_error.hpp"
 #include "region.hpp"
+
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#	define MEMBER_THUNK_VIRTUAL_ALLOC VirtualAlloc
+#	define MEMBER_THUNK_VIRTUAL_PROTECT VirtualProtect
+#else
+#	define MEMBER_THUNK_VIRTUAL_ALLOC VirtualAllocFromApp
+#	define MEMBER_THUNK_VIRTUAL_PROTECT VirtualProtectFromApp
+#endif
+
+#define MEMBER_THUNK_STRINGIFY_INNER(x) #x
+#define MEMBER_THUNK_STRINGIFY(x) MEMBER_THUNK_STRINGIFY_INNER(x)
 
 namespace member_thunk::details
 {
@@ -39,10 +51,10 @@ namespace member_thunk::details
 
 	inline void* virtual_alloc(void* address, std::size_t size, std::uint32_t type, std::uint32_t protection)
 	{
-		void* ptr = VirtualAlloc(address, size, type, protection);
+		void* ptr = MEMBER_THUNK_VIRTUAL_ALLOC(address, size, type, protection);
 		if (!ptr)
 		{
-			throw win32_error("VirtualAlloc");
+			throw win32_error(MEMBER_THUNK_STRINGIFY(MEMBER_THUNK_VIRTUAL_ALLOC));
 		}
 
 		return ptr;
@@ -51,9 +63,9 @@ namespace member_thunk::details
 	inline std::uint32_t virtual_protect(void* ptr, std::size_t size, std::uint32_t protection)
 	{
 		DWORD old_protection;
-		if (!VirtualProtect(ptr, size, protection, &old_protection))
+		if (!MEMBER_THUNK_VIRTUAL_PROTECT(ptr, size, protection, &old_protection))
 		{
-			throw win32_error("VirtualProtect");
+			throw win32_error(MEMBER_THUNK_STRINGIFY(MEMBER_THUNK_VIRTUAL_PROTECT));
 		}
 
 		return old_protection;
@@ -67,3 +79,8 @@ namespace member_thunk::details
 		}
 	}
 }
+
+#undef MEMBER_THUNK_STRINGIFY
+#undef MEMBER_THUNK_STRINGIFY_INNER
+#undef MEMBER_THUNK_VIRTUAL_PROTECT
+#undef MEMBER_THUNK_VIRTUAL_ALLOC
