@@ -1,5 +1,7 @@
 # member_thunk
 
+This project is still a huge work in progress. There's some barebones documentation below, more will be coming as I work on it.
+
 ## Custom heap
 
 To implement features such as W^X and Control Flow Guard, member_thunk implements its own heap. There is a built-in default heap for user convenience, but it can be disabled by defining `MEMBER_THUNK_DISABLE_DEFAULT_HEAP`. The API is fairly simple:
