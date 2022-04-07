@@ -29,7 +29,7 @@ namespace member_thunk
 	{ }
 
 	template<typename T>
-	page<T> heap<T>::allocate_page()
+	page heap<T>::allocate_page()
 	{
 		std::scoped_lock guard(lock);
 		if (!used_regions.empty())

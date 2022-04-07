@@ -42,7 +42,7 @@ namespace member_thunk::details
 	}
 
 	template<typename T>
-	page<T> region<T>::commit_page()
+	page region<T>::commit_page()
 	{
 		// implied lock from heap
 		auto page_index = find_free_page();

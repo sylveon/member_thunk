@@ -19,7 +19,7 @@ namespace member_thunk
 		return default_heap;
 	}
 
-	inline page<details::default_lock_t> allocate_page() { return details::get_default_heap().allocate_page(); }
+	inline page allocate_page() { return details::get_default_heap().allocate_page(); }
 	inline void compact() { details::get_default_heap().compact(); }
 }
 
