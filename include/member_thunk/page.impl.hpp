@@ -27,10 +27,9 @@ namespace member_thunk
 #endif
 	}
 
-	template<typename T>
-	page<T>::page(details::region<T>* parent, std::byte* address) :
+	page::page(details::abstract_region* parent, std::byte* address) :
 		executable(false),
-		size(parent->parent->layout.page_size),
+		size(parent->page_size()),
 		parent(parent),
 		begin(static_cast<details::thunk*>(details::virtual_alloc(address, size, MEM_COMMIT, PAGE_READWRITE))),
 		end(begin)
@@ -44,8 +43,7 @@ namespace member_thunk
 			});
 	}
 
-	template<typename T>
-	void page<T>::set_call_target([[maybe_unused]] bool valid)
+	void page::set_call_target([[maybe_unused]] bool valid)
 	{
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 		PROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY policy;
@@ -76,8 +74,7 @@ namespace member_thunk
 #endif
 	}
 
-	template<typename T>
-	void page<T>::free()
+	void page::free()
 	{
 		if (executable)
 		{
@@ -96,8 +93,7 @@ namespace member_thunk
 		parent->mark_decommited(reinterpret_cast<std::byte*>(begin));
 	}
 
-	template<typename T>
-	details::thunk* page<T>::new_thunk(void* that, void* func)
+	details::thunk* page::new_thunk(void* that, void* func)
 	{
 		if (executable)
 		{
@@ -112,26 +108,22 @@ namespace member_thunk
 		return new (end++) details::thunk(that, func);
 	}
 
-	template<typename T>
-	details::thunk* page<T>::page_end() const noexcept
+	details::thunk* page::page_end() const noexcept
 	{
 		return reinterpret_cast<details::thunk*>(reinterpret_cast<std::byte*>(begin) + size);
 	}
 
-	template<typename T>
-	std::size_t page<T>::byte_offset(details::thunk* thunk) const noexcept
+	std::size_t page::byte_offset(details::thunk* thunk) const noexcept
 	{
 		return reinterpret_cast<std::byte*>(thunk) - reinterpret_cast<std::byte*>(begin);
 	}
 
-	template<typename T>
-	bool page<T>::full() const noexcept
+	bool page::full() const noexcept
 	{
 		return end + 1 > page_end();
 	}
 
-	template<typename T>
-	void page<T>::mark_executable()
+	void page::mark_executable()
 	{
 		if (!executable)
 		{

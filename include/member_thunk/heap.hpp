@@ -6,13 +6,11 @@
 
 namespace member_thunk
 {
-	template<typename T>
 	class page;
 
 	template<typename T = details::default_lock_t>
 	class heap final
 	{
-		friend page<T>;
 		friend details::region<T>;
 
 		// we use a linked list to obtain pointer stability, and remove exception failure points.
@@ -27,7 +25,7 @@ namespace member_thunk
 		heap& operator=(const heap&) = delete;
 
 		heap();
-		page<T> allocate_page();
+		page allocate_page();
 		void compact();
 		~heap() noexcept(false);
 	};

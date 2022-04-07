@@ -5,6 +5,7 @@
 
 #include "./default_heap.hpp"
 #include "./details/function_traits.hpp"
+#include "./details/heap/abstract_region.hpp"
 
 namespace member_thunk
 {
@@ -16,18 +17,17 @@ namespace member_thunk
 		class thunk;
 	}
 
-	template<typename T = details::default_lock_t>
 	class page final
 	{
 		friend details::region<T>;
 
 		bool executable; // whether the page has been marked executable
 		std::uint32_t size; // saved to skip double indirection, does not affect class size because there would be padding otherwise
-		details::region<T>* parent; // the region this page is from
+		details::abstract_region* parent; // the region this page is from
 		details::thunk* begin; // the beginning of the page
 		details::thunk* end; // pointer past the end of currently created thunks
 
-		page(details::region<T>* parent, std::byte* address);
+		page(details::abstract_region* parent, std::byte* address);
 
 		void set_call_target(bool valid);
 		void free();

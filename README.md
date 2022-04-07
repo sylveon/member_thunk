@@ -18,11 +18,11 @@ member_thunk implements thread safety through the use of template parameters (th
  - `heap<null_lock>` does not have thread safety;
  - `heap<slim_lock>` provides thread safety for compacting the heap as well as creating and freeing a page.
 
-Despite `page` taking an (also defaulted) lock template parameter, it does not provide safety for operations within a page: assume it to be single-threaded or implement your own locking on top. The template parameter is used because a page keeps a pointer to the heap it comes from, so also needs to know its locking strategy.
+`page` does not take a lock template parameter, so there is no thread safety for operations within the same page: assume it to be single-threaded (use one per thread or implement your own locking on top).
 
-Concurrent execution of methods in a single page works lock-free no matter what option is picked, however all execution must be stopped before destroying the page.
+Concurrent execution of thunks created in a single page works lock-free once the page is marked executable, however you must make sure a thunk does not get invoked after the destruction of the page.
 
-`slim_lock` is a custom type which uses the fast and efficient Windows [Slim Reader/Writer Locks](https://docs.microsoft.com/en-us/windows/win32/sync/slim-reader-writer--srw--locks). If you prefer, you can use any type that meets the [BasicLockable](https://en.cppreference.com/w/cpp/named_req/BasicLockable) requirement and is default constructible, for example `std::mutex`.
+`slim_lock` is a custom type which uses the fast and efficient Windows [Slim Reader/Writer Locks](https://docs.microsoft.com/en-us/windows/win32/sync/slim-reader-writer--srw--locks). If you prefer, you can use any type that meets the [BasicLockable](https://en.cppreference.com/w/cpp/named_req/BasicLockable) requirement and is default constructible, for example `std::mutex` can work too.
 
 The default heap has 3 different ways of operating with regards to thread safety:
 

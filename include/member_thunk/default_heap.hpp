@@ -26,7 +26,6 @@ namespace member_thunk
 	template<typename T>
 	class heap;
 
-	template<typename T>
 	class page;
 
 	namespace details
@@ -34,7 +33,7 @@ namespace member_thunk
 		heap<default_lock_t>& get_default_heap();
 	}
 
-	page<details::default_lock_t> allocate_page();
+	page allocate_page();
 	void compact();
 }
 #endif // !defined(MEMBER_THUNK_DISABLE_DEFAULT_HEAP)

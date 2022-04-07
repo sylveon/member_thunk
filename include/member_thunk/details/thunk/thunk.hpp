@@ -6,7 +6,6 @@
 
 namespace member_thunk
 {
-	template<typename T>
 	class page;
 }
 
@@ -15,8 +14,7 @@ namespace member_thunk::details
 {
 	class alignas(16) thunk final
 	{
-		template<typename T>
-		friend class page;
+		friend page;
 
 #if defined(_M_AMD64)
 		// endbr64

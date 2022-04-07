@@ -53,6 +53,12 @@ namespace member_thunk::details
 	}
 
 	template<typename T>
+	std::uint32_t region<T>::page_size() noexcept
+	{
+		return parent->layout.page_size;
+	}
+
+	template<typename T>
 	void region<T>::mark_decommited(std::byte* page)
 	{
 		std::scoped_lock guard(lock);
