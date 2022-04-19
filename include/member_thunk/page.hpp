@@ -19,7 +19,8 @@ namespace member_thunk
 
 	class page final
 	{
-		friend details::region<T>;
+		template<typename T>
+		friend class details::region;
 
 		bool executable; // whether the page has been marked executable
 		std::uint32_t size; // saved to skip double indirection, does not affect class size because there would be padding otherwise

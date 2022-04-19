@@ -21,8 +21,14 @@ namespace member_thunk
 	namespace details
 	{
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-		static constexpr std::uint32_t executable_page_protection = PAGE_EXECUTE_READ | PAGE_TARGETS_INVALID;
+		static constexpr std::uint32_t executable_page_protection = PAGE_EXECUTE_READ | PAGE_TARGETS_NO_UPDATE;
 #else
+		// Since UWP doesn't allow us to specify an executable page protection with VirtualAlloc, we can't pass
+		// PAGE_TARGETS_NO_UPDATE here because the CFG bitmap would never get initialized, making
+		// SetProcessValidCallTargets fail with an invalid parameter error.
+		// This is okay, since once SetProcessValidCallTargets is called, it won't be possible
+		// to call invalid targets anymore.
+		// It does mean there is a slight interval where it is possible to call invalid targets, but better than nothing.
 		static constexpr std::uint32_t executable_page_protection = PAGE_EXECUTE_READ;
 #endif
 	}
@@ -43,9 +49,8 @@ namespace member_thunk
 			});
 	}
 
-	void page::set_call_target([[maybe_unused]] bool valid)
+	void page::set_call_target(bool valid)
 	{
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 		PROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY policy;
 		if (!GetProcessMitigationPolicy(GetCurrentProcess(), ProcessControlFlowGuardPolicy, &policy, sizeof(policy)))
 		{
@@ -55,6 +60,27 @@ namespace member_thunk
 		if (policy.EnableControlFlowGuard)
 		{
 			std::vector<CFG_CALL_TARGET_INFO> target_info;
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+			// UWP needs a first pass disabling every 16-byte aligned address in the page.
+			target_info.resize(size / 16);
+
+			std::ranges::generate(target_info,
+				[n = 0ULL]() mutable
+				{
+					return CFG_CALL_TARGET_INFO {
+						.Offset = 16 * n++,
+						.Flags = 0,
+					};
+				});
+
+			if (!SetProcessValidCallTargets(GetCurrentProcess(), begin, size, static_cast<ULONG>(target_info.size()), target_info.data()))
+			{
+				throw win32_error("SetProcessValidCallTargets");
+			}
+
+			target_info.clear();
+#endif
+
 			target_info.reserve(end - begin);
 
 			std::ranges::transform(begin, end, std::back_inserter(target_info),
@@ -71,7 +97,6 @@ namespace member_thunk
 				throw win32_error("SetProcessValidCallTargets");
 			}
 		}
-#endif
 	}
 
 	void page::free()

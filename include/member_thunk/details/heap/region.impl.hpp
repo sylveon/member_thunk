@@ -15,6 +15,7 @@ namespace member_thunk::details
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 	static constexpr std::uint32_t default_region_protection = PAGE_EXECUTE_READ | PAGE_TARGETS_INVALID;
 #else
+	// UWP doesn't allow us to call VirtualAlloc with an executable page protection
 	static constexpr std::uint32_t default_region_protection = PAGE_READWRITE;
 #endif
 
