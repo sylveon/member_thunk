@@ -47,29 +47,11 @@ namespace member_thunk::details
 	{
 		// implied lock from heap
 		auto page_index = find_free_page();
-		page new_page(this, base + (page_index * parent->layout.page_size));
+		const auto page_size = parent->layout.page_size;
+		page new_page(base + (page_index * page_size), page_size, page_callback, this);
 
 		set_page_status(page_index, true);
 		return new_page;
-	}
-
-	template<typename T>
-	std::uint32_t region<T>::page_size() noexcept
-	{
-		return parent->layout.page_size;
-	}
-
-	template<typename T>
-	void region<T>::mark_decommited(std::byte* page)
-	{
-		std::scoped_lock guard(lock);
-		bool was_full = full();
-		set_page_status(static_cast<int>((page - base) / parent->layout.page_size), false);
-
-		if (was_full || page_availability == 0)
-		{
-			parent->update_region(this, was_full);
-		}
 	}
 
 	template<typename T>
@@ -77,6 +59,21 @@ namespace member_thunk::details
 	{
 		int shift = pages_per_region - 1 - index;
 		page_availability = (page_availability & ~(1 << shift)) | (status << shift);
+	}
+
+	template<typename T>
+	void region<T>::page_callback(std::byte* page, void* data)
+	{
+		const auto that = static_cast<region*>(data);
+
+		std::scoped_lock guard(that->lock);
+		bool was_full = that->full();
+		that->set_page_status(static_cast<int>((page - that->base) / that->parent->layout.page_size), false);
+
+		if (was_full || that->page_availability == 0)
+		{
+			that->parent->update_region(that, was_full);
+		}
 	}
 
 	template<typename T>

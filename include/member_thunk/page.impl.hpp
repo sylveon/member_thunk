@@ -33,20 +33,26 @@ namespace member_thunk
 #endif
 	}
 
-	page::page(details::abstract_region* parent, std::byte* address) :
-		executable(false),
-		size(parent->page_size()),
-		parent(parent),
-		begin(static_cast<details::thunk*>(details::virtual_alloc(address, size, MEM_COMMIT, PAGE_READWRITE))),
-		end(begin)
+	page::page(std::byte* address, std::uint32_t page_size, free_callback_t free_callback, void* callback_data) :
+		begin(static_cast<details::thunk*>(details::virtual_alloc(address, page_size, MEM_COMMIT, PAGE_READWRITE))),
+		end(begin),
+		callback(free_callback),
+		data(callback_data),
+		size(page_size),
+		executable(false)
 	{
 		// fill the entire page with debug breaks by creating a thunk and then destroying it.
-		// this is required because zeroes are valid instructions in x64.
+		// this is required because zeroes are valid instructions.
+#if defined(_M_AMD64)
+		// x64 optimization: since debug breaks are single byte, we can use memset.
+		std::memset(begin, 0xCC, size);
+#else
 		std::ranges::for_each(begin, page_end(),
 			[](details::thunk& thunk) noexcept
 			{
 				(new (&thunk) details::thunk())->~thunk();
 			});
+#endif
 	}
 
 	void page::set_call_target(bool valid)
@@ -60,37 +66,42 @@ namespace member_thunk
 		if (policy.EnableControlFlowGuard)
 		{
 			std::vector<CFG_CALL_TARGET_INFO> target_info;
+
 #if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-			// UWP needs a first pass disabling every 16-byte aligned address in the page.
-			target_info.resize(size / 16);
-
-			std::ranges::generate(target_info,
-				[n = 0ULL]() mutable
-				{
-					return CFG_CALL_TARGET_INFO {
-						.Offset = 16 * n++,
-						.Flags = 0,
-					};
-				});
-
-			if (!SetProcessValidCallTargets(GetCurrentProcess(), begin, size, static_cast<ULONG>(target_info.size()), target_info.data()))
+			if (valid)
 			{
-				throw win32_error("SetProcessValidCallTargets");
+				// UWP needs to pass every 16-byte aligned address in the page.
+				target_info.resize(size / 16);
+
+				std::ranges::generate(target_info,
+					[this, n = 0ULL]() mutable noexcept
+					{
+						const ULONG_PTR offset = 16 * n++;
+						const bool valid = offset < byte_offset(end) && offset % sizeof(details::thunk) == 0;
+
+						return CFG_CALL_TARGET_INFO {
+							.Offset = offset,
+							.Flags = static_cast<ULONG_PTR>(valid ? CFG_CALL_TARGET_VALID : 0)
+						};
+					});
 			}
-
-			target_info.clear();
+			else
+			{
 #endif
+				target_info.resize(end - begin);
 
-			target_info.reserve(end - begin);
+				std::ranges::generate(target_info,
+					[this, valid, n = 0ULL]() mutable noexcept
+					{
+						return CFG_CALL_TARGET_INFO {
+							.Offset = sizeof(details::thunk) * n++,
+							.Flags = static_cast<ULONG_PTR>(valid ? CFG_CALL_TARGET_VALID : 0)
+						};
+					});
 
-			std::ranges::transform(begin, end, std::back_inserter(target_info),
-				[this, valid](details::thunk& thunk) noexcept
-				{
-					return CFG_CALL_TARGET_INFO {
-						.Offset = static_cast<ULONG_PTR>(byte_offset(&thunk)),
-						.Flags = static_cast<ULONG_PTR>(valid ? CFG_CALL_TARGET_VALID : 0),
-					};
-				});
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+			}
+#endif
 
 			if (!SetProcessValidCallTargets(GetCurrentProcess(), begin, size, static_cast<ULONG>(target_info.size()), target_info.data()))
 			{
@@ -115,7 +126,7 @@ namespace member_thunk
 		}
 
 		details::virtual_free(begin, size, MEM_DECOMMIT);
-		parent->mark_decommited(reinterpret_cast<std::byte*>(begin));
+		callback(reinterpret_cast<std::byte*>(begin), data);
 	}
 
 	details::thunk* page::new_thunk(void* that, void* func)
@@ -152,7 +163,7 @@ namespace member_thunk
 	{
 		if (!executable)
 		{
-			details::flush_instruction_cache(begin, byte_offset(end));
+			details::flush_instruction_cache(begin, size);
 			details::virtual_protect(begin, size, details::executable_page_protection);
 			executable = true;
 

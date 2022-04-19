@@ -5,7 +5,6 @@
 
 #include "./default_heap.hpp"
 #include "./details/function_traits.hpp"
-#include "./details/heap/abstract_region.hpp"
 
 namespace member_thunk
 {
@@ -22,13 +21,16 @@ namespace member_thunk
 		template<typename T>
 		friend class details::region;
 
-		bool executable; // whether the page has been marked executable
-		std::uint32_t size; // saved to skip double indirection, does not affect class size because there would be padding otherwise
-		details::abstract_region* parent; // the region this page is from
+		using free_callback_t = void (*)(std::byte* page, void* data);
+
 		details::thunk* begin; // the beginning of the page
 		details::thunk* end; // pointer past the end of currently created thunks
+		free_callback_t callback; // called when the page is freed
+		void* data; // data for the callback
+		std::uint32_t size; // size of the page
+		bool executable; // whether the page has been marked executable
 
-		page(details::abstract_region* parent, std::byte* address);
+		page(std::byte* address, std::uint32_t page_size, free_callback_t free_callback, void* callback_data);
 
 		void set_call_target(bool valid);
 		void free();
@@ -41,22 +43,24 @@ namespace member_thunk
 		page& operator=(const page&) = delete;
 
 		constexpr page(page&& other) noexcept :
-			executable(other.executable),
-			size(other.size),
-			parent(other.parent),
 			begin(std::exchange(other.begin, nullptr)),
-			end(other.end)
+			end(other.end),
+			callback(other.callback),
+			data(other.data),
+			size(other.size),
+			executable(other.executable)
 		{ }
 
 		constexpr page& operator=(page&& other) noexcept
 		{
 			if (this != &other)
 			{
-				std::swap(executable, other.executable);
-				std::swap(size, other.size);
-				std::swap(parent, other.parent);
 				std::swap(begin, other.begin);
 				std::swap(end, other.end);
+				std::swap(callback, other.callback);
+				std::swap(data, other.data);
+				std::swap(size, other.size);
+				std::swap(executable, other.executable);
 			}
 
 			return *this;

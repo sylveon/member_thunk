@@ -3,8 +3,6 @@
 #include <cstdint>
 #include <limits>
 
-#include "./abstract_region.hpp"
-
 namespace member_thunk
 {
 	template<typename T>
@@ -19,7 +17,7 @@ namespace member_thunk::details
 	static constexpr int pages_per_region = std::numeric_limits<page_availability_t>::digits;
 
 	template<typename T>
-	class region final : abstract_region
+	class region final
 	{
 		friend heap<T>;
 
@@ -34,9 +32,9 @@ namespace member_thunk::details
 		bool full() const noexcept;
 		int find_free_page() const;
 		page commit_page();
-		std::uint32_t page_size() noexcept override;
-		void mark_decommited(std::byte* page) override;
 		void set_page_status(int index, bool status) noexcept;
+
+		static void page_callback(std::byte* page, void* data);
 
 	public:
 		region(heap<T>* parent);
