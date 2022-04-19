@@ -33,7 +33,7 @@ namespace member_thunk
 #endif
 	}
 
-	page::page(std::byte* address, std::uint32_t page_size, free_callback_t free_callback, void* callback_data) :
+	inline page::page(std::byte* address, std::uint32_t page_size, free_callback_t free_callback, void* callback_data) :
 		begin(static_cast<details::thunk*>(details::virtual_alloc(address, page_size, MEM_COMMIT, PAGE_READWRITE))),
 		end(begin),
 		callback(free_callback),
@@ -55,7 +55,7 @@ namespace member_thunk
 #endif
 	}
 
-	void page::set_call_target(bool valid)
+	inline void page::set_call_target(bool valid)
 	{
 		PROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY policy;
 		if (!GetProcessMitigationPolicy(GetCurrentProcess(), ProcessControlFlowGuardPolicy, &policy, sizeof(policy)))
@@ -110,7 +110,7 @@ namespace member_thunk
 		}
 	}
 
-	void page::free()
+	inline void page::free()
 	{
 		if (executable)
 		{
@@ -129,7 +129,7 @@ namespace member_thunk
 		callback(reinterpret_cast<std::byte*>(begin), data);
 	}
 
-	details::thunk* page::new_thunk(void* that, void* func)
+	inline details::thunk* page::new_thunk(void* that, void* func)
 	{
 		if (executable)
 		{
@@ -144,22 +144,22 @@ namespace member_thunk
 		return new (end++) details::thunk(that, func);
 	}
 
-	details::thunk* page::page_end() const noexcept
+	inline details::thunk* page::page_end() const noexcept
 	{
 		return reinterpret_cast<details::thunk*>(reinterpret_cast<std::byte*>(begin) + size);
 	}
 
-	std::size_t page::byte_offset(details::thunk* thunk) const noexcept
+	inline std::size_t page::byte_offset(details::thunk* thunk) const noexcept
 	{
 		return reinterpret_cast<std::byte*>(thunk) - reinterpret_cast<std::byte*>(begin);
 	}
 
-	bool page::full() const noexcept
+	inline bool page::full() const noexcept
 	{
 		return end + 1 > page_end();
 	}
 
-	void page::mark_executable()
+	inline void page::mark_executable()
 	{
 		if (!executable)
 		{
